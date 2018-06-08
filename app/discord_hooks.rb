@@ -27,7 +27,7 @@ module_function
         name: payload.user.username,
         icon_url: payload.user.avatar_url
       },
-      title: "[#{payload.project.path_with_namespace}] Merge request opened: ##{mr.id} #{mr.title}",
+      title: "[#{payload.project.path_with_namespace}] Merge request opened: !#{mr.iid} #{mr.title}",
       url: mr.url,
       description: mr.description,
       color: 0xE24329,
@@ -42,7 +42,7 @@ module_function
         name: payload.user.username,
         icon_url: payload.user.avatar_url
       },
-      title: "[#{payload.project.path_with_namespace}] Issue opened: ##{issue.id} #{issue.title}",
+      title: "[#{payload.project.path_with_namespace}] Issue opened: ##{issue.iid} #{issue.title}",
       url: issue.url,
       description: issue.description,
       color: 0xfCA326,
