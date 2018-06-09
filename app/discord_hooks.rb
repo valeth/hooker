@@ -9,6 +9,8 @@ module DiscordHooks
 module_function
 
   def push_hook(payload)
+    raise Unsupported, "no commits, new branch?" if payload.total_commits_count.zero?
+
     {
       title: title(payload, "#{payload.total_commits_count} new commits"),
       url: payload.project.web_url,
