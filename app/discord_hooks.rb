@@ -67,8 +67,10 @@ module_function
     }
   end
 
+  # Possible status: running, pending, success, failed, canceled, skipped
   def pipeline_hook(payload)
     pipeline = payload.object_attributes
+    return unless ["success", "failed"].include?(pipeline.status)
     status = (pipeline.status == "success") ? "succeeded" : "failed"
     {
       author: {
