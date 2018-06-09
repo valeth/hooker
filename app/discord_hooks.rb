@@ -15,7 +15,7 @@ module_function
       title: "[#{payload.project.path_with_namespace}] #{payload.total_commits_count} new commits",
       url: payload.project.web_url,
       description: payload.commits.reduce("") do |acc, commit|
-        acc += "`#{commit.id[0..8]}` #{commit.message} - #{commit.author.name}\n"
+        acc += "`#{commit.id[0..8]}` #{commit.message.chomp} - #{commit.author.name}\n"
       end,
       color: 0xFC6D26
     }
