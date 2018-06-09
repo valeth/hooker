@@ -12,6 +12,7 @@ module_function
     raise Unsupported, "no commits, new branch?" if payload.total_commits_count.zero?
 
     {
+      author: author(payload.user_username, payload.user_avatar),
       title: title(payload, "#{payload.total_commits_count} new commits"),
       url: payload.project.web_url,
       description: payload.commits.map { |c| commit_line(c) }.join("\n"),
@@ -102,7 +103,7 @@ module_function
   end
 
   def author(name, icon)
-    { name: name, icon: icon }
+    { name: name, icon_url: icon }
   end
 
   def footer(payload)
