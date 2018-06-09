@@ -1,4 +1,5 @@
 require "rest-client"
+require "active_support/core_ext/string/inflections"
 
 module DiscordHooks
   DISCORD_WEBHOOK_URL = ENV.fetch("DISCORD_WEBHOOK_URL").freeze
@@ -47,6 +48,22 @@ module_function
       description: issue.description,
       color: 0xfCA326,
       timestamp: Time.parse(issue.created_at).iso8601
+    }
+  end
+
+  def note_hook(payload)
+    comment = payload.object_attributes
+    comment_type = comment.noteable_type.titleize.downcase
+    {
+      author: {
+        name: payload.user.username,
+        icon_url: payload.user.avatar_url
+      },
+      title: "[#{payload.project.path_with_namespace}] New comment on #{comment_type}",
+      url: comment.url,
+      description: comment.note,
+      color: 0xFC6D26,
+      timestamp: Time.parse(comment.created_at).iso8601
     }
   end
 
