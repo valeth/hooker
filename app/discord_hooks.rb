@@ -27,6 +27,7 @@ module_function
       case mr.action
       when "open" then "opened"
       when "close" then "closed"
+      when "merge" then "merged"
       else raise Unsupported, "action #{mr.action} not supported"
       end
 
