@@ -5,9 +5,14 @@ class ObjectifiedHash
     @data = build(hash)
   end
 
-  def method_missing(key)
+  def method_missing(key, *args)
     if respond_to_missing?(key)
-      @data.fetch(key.to_sym, nil)
+      if /^.*=$/.match?(key)
+        raise FrozenError, "can't modify frozen object" if frozen?
+        @data[key[0..-2].to_sym] = args.first
+      else
+        @data.fetch(key, nil)
+      end
     else
       super
     end
@@ -33,6 +38,15 @@ class ObjectifiedHash
     to_h == other.to_h
   end
 
+  def freeze
+    @data.freeze
+    self
+  end
+
+  def frozen?
+    @data.frozen?
+  end
+
 private
 
   def build(hash)
@@ -47,6 +61,7 @@ private
   end
 
   def respond_to_missing?(name, include_private = false)
-    @data.keys.include?(name.to_sym) || super
+    return true if /^.*=$/.match?(name)
+    @data.keys.include?(name) || super
   end
 end
