@@ -75,4 +75,39 @@ RSpec.describe DiscordHooks do
       expect(described_class.merge_request_hook(gl_mr_merge)).to eq(expected_merge)
     end
   end
+
+  context "issue hook" do
+    let(:gl_issue_open) { objectified_fixture("gl_issue_open.json") }
+    let(:gl_issue_close) do
+      gl_issue_open.dup.tap do |x|
+        x.object_attributes.action = "close"
+        x.object_attributes.state = "closed"
+      end
+    end
+    let(:expected_open) do
+      {
+        author: { name: "Testmaster", icon_url: "http://example.com/testmaster.png" },
+        title: "Project - Issue opened: #3 Anti cheat not working",
+        url: "https://gitlab.com/testmaster/project/issues/3",
+        description: "Anti cheat system is not detecting cheaters\nPls fix!",
+        color: 0xfCA326,
+        footer: { text: "testmaster/project", icon_url: "https://gitlab.com/testmaster/project/avatar.png" },
+        timestamp: Time.parse("2018-06-19 12:28:46 UTC").iso8601
+      }
+    end
+    let(:expected_close) do
+      expected_open.dup.tap do |x|
+        x[:title] = "Project - Issue closed: #3 Anti cheat not working"
+        x.delete(:description)
+      end
+    end
+
+    it "creates an embed on opened issues" do
+      expect(described_class.issue_hook(gl_issue_open)).to eq(expected_open)
+    end
+
+    it "creates an embed on closed issues" do
+      expect(described_class.issue_hook(gl_issue_close)).to eq(expected_close)
+    end
+  end
 end
