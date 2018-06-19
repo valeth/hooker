@@ -99,7 +99,7 @@ module_function
   end
 
   def commit_line(commit)
-    "[`#{commit.id[0..8]}`](#{commit.url}) #{commit.message.lines.first.chomp} - **#{commit.author.name}**"
+    "[`#{commit.id[0...8]}`](#{commit.url}) #{commit.message.lines.first.chomp} - **#{commit.author.name}**"
   end
 
   # @param event [Symbol]
