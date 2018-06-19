@@ -1,16 +1,16 @@
+# frozen_string_literal: true
+
 require "rest-client"
 require "active_support/core_ext/string/inflections"
 
 module DiscordHooks
-  Unsupported = Class.new(StandardError)
-
   DISCORD_WEBHOOK_URL = ENV.fetch("DISCORD_WEBHOOK_URL").freeze
 
 module_function
 
+  # @param payload [ObjectifiedHash]
+  # @return Hash
   def push_hook(payload)
-    raise Unsupported, "no commits, new branch?" if payload.total_commits_count.zero?
-
     {
       author: author(payload.user_username, payload.user_avatar),
       title: title(payload, "#{payload.total_commits_count} new commits"),
@@ -21,19 +21,14 @@ module_function
     }
   end
 
+  # @param payload [ObjectifiedHash]
+  # @return Hash
   def merge_request_hook(payload)
     mr = payload.object_attributes
-    status =
-      case mr.action
-      when "open" then "opened"
-      when "close" then "closed"
-      when "merge" then "merged"
-      else raise Unsupported, "action #{mr.action} not supported"
-      end
 
     {
       author: author(payload.user.username, payload.user.avatar_url),
-      title: title(payload, "Merge request #{status}: !#{mr.iid} #{mr.title}"),
+      title: title(payload, "Merge request #{mr.state}: !#{mr.iid} #{mr.title}"),
       url: mr.url,
       description: mr.description,
       color: 0xE24329,
@@ -42,18 +37,14 @@ module_function
     }
   end
 
+  # @param payload [ObjectifiedHash]
+  # @return Hash
   def issue_hook(payload)
     issue = payload.object_attributes
-    status =
-      case issue.action
-      when "open" then "opened"
-      when "close" then "closed"
-      else raise Unsupported, "action #{issue.action} not supported"
-      end
 
     {
       author: author(payload.user.username, payload.user.avatar_url),
-      title: title(payload, "Issue #{status}: ##{issue.iid} #{issue.title}"),
+      title: title(payload, "Issue #{issue.state}: ##{issue.iid} #{issue.title}"),
       url: issue.url,
       description: issue.description,
       color: 0xfCA326,
@@ -62,6 +53,8 @@ module_function
     }
   end
 
+  # @param payload [ObjectifiedHash]
+  # @return Hash
   def note_hook(payload)
     comment = payload.object_attributes
     comment_type = comment.noteable_type.titleize.downcase
@@ -77,20 +70,14 @@ module_function
     }
   end
 
+  # @param payload [ObjectifiedHash]
+  # @return Hash
   def pipeline_hook(payload)
     pipeline = payload.object_attributes
-    return unless %w[success failed].include?(pipeline.status)
-
-    status =
-      case pipeline.status
-      when "success" then "succeeded"
-      when "failed"  then "failed"
-      else raise Unsupported, "status #{pipeline.status} not supported"
-      end
 
     {
       author: author(payload.user.username, payload.user.avatar_url),
-      title: title(payload, "Pipeline #{status}: ##{pipeline.id}"),
+      title: title(payload, "Pipeline #{pipeline.detailed_status}: ##{pipeline.id}"),
       url: payload.commit.url,
       description: commit_line(payload.commit),
       color: 0xE24329,
@@ -115,15 +102,16 @@ module_function
     "[`#{commit.id[0..8]}`](#{commit.url}) #{commit.message.lines.first.chomp} - **#{commit.author.name}**"
   end
 
-  def handle(request)
-    return unless respond_to?(request.event)
-    discord_embed = public_send(request.event, request.payload)
+  # @param event [Symbol]
+  # @param payload [ObjectifiedHash]
+  def handle(event:, payload:)
+    return unless respond_to?(event)
+    discord_embed = public_send(event, payload)
     webhook_notify(embeds: [discord_embed])
-    nil
-  rescue Unsupported
     nil
   end
 
+  # @param payload [Hash]
   def webhook_notify(payload)
     return unless payload.respond_to?(:to_json)
     RestClient.post(DISCORD_WEBHOOK_URL, payload.to_json, content_type: :json)
