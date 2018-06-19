@@ -4,7 +4,7 @@ require "rest-client"
 require "active_support/core_ext/string/inflections"
 
 module DiscordHooks
-  DISCORD_WEBHOOK_URL = ENV.fetch("DISCORD_WEBHOOK_URL").freeze
+  DISCORD_WEBHOOK_URL = ENV["DISCORD_WEBHOOK_URL"].freeze
 
 module_function
 

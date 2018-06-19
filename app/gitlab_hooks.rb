@@ -55,8 +55,8 @@ module_function
   # @param payload [ObjectifiedHash]
   # @raises Unsupported
   def pipeline_hook(payload)
-    status = pipeline.status
-    raise Unsupported, "status #{pipeline.status} not supported" \
+    status = payload.object_attributes.status
+    raise Unsupported, "status #{status} not supported" \
       unless %w[success failed].include?(status)
     forward(__method__, payload)
   end
