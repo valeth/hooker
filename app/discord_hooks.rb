@@ -42,15 +42,16 @@ module_function
   def issue_hook(payload)
     issue = payload.object_attributes
 
-    {
+    embed = {
       author: author(payload.user.username, payload.user.avatar_url),
       title: title(payload, "Issue #{issue.state}: ##{issue.iid} #{issue.title}"),
       url: issue.url,
-      description: issue.description,
       color: 0xfCA326,
       footer: footer(payload),
       timestamp: Time.parse(issue.created_at).iso8601
     }
+    embed[:description] = issue.description unless issue.state == "closed"
+    embed
   end
 
   # @param payload [ObjectifiedHash]
