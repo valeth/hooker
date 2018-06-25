@@ -14,7 +14,7 @@ RSpec.describe DiscordHooks do
       COMMITS
       {
         author: { name: "Testmaster", icon_url: "http://example.com/testmaster.png" },
-        title: "Project - 5 new commits",
+        title: "Project - 5 new commits in master",
         url: "https://gitlab.com/testmaster/project",
         description: desc.chomp,
         color: 0xFC6D26,

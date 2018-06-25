@@ -13,7 +13,7 @@ module_function
   def push_hook(payload)
     {
       author: author(payload.user_username, payload.user_avatar),
-      title: title(payload, "#{payload.total_commits_count} new commits"),
+      title: title(payload, "#{payload.total_commits_count} new commits in #{payload.ref}"),
       url: payload.project.web_url,
       description: payload.commits.map { |c| commit_line(c) }.join("\n"),
       color: 0xFC6D26,
@@ -78,9 +78,8 @@ module_function
 
     {
       author: author(payload.user.username, payload.user.avatar_url),
-      title: title(payload, "Pipeline #{pipeline.detailed_status}: ##{pipeline.id}"),
+      title: title(payload, "Pipeline for #{pipeline.ref} #{pipeline.detailed_status} (#{pipeline.id})"),
       url: payload.commit.url,
-      description: commit_line(payload.commit),
       color: 0xE24329,
       footer: footer(payload),
       timestamp: Time.parse(pipeline.created_at).iso8601

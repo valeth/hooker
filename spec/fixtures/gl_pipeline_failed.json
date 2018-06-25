@@ -1,5 +1,6 @@
 {
   "object_attributes": {
-    "status": "failed"
+    "status": "failed",
+    "ref": "master"
   }
 }
