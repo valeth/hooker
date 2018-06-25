@@ -1,4 +1,4 @@
-worker_processes `nproc`&.to_i || 4
+worker_processes ENV.fetch("UNICORN_WORKERS") { `nproc`&.to_i || 4 }
 
 working_directory File.expand_path(".", __dir__)
 
