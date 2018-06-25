@@ -63,32 +63,26 @@ module_function
 
   HOOKS.each do |event|
     next if respond_to?(event)
-    # puts "Using default hook handler for #{event}"
     define_method(event) { |payload| forward(event, payload) }
   end
 
   # helper methods
 
-  def validate_token(request)
-    gitlab_token = request.get_header("HTTP_X_GITLAB_TOKEN")
-    raise InvalidToken, "Token invalid" unless gitlab_token == TOKEN
+  def validate_token(token)
+    raise InvalidToken, "Token invalid" unless token == TOKEN
   end
 
   def forward(event, payload)
     DiscordHooks.handle(event: event, payload: payload)
   end
 
-  def handle(request)
-    Thread.new do
-      validate_token(request) if TOKEN
-      gitlab_event = request.fetch_header("HTTP_X_GITLAB_EVENT")
-      meth = gitlab_event.downcase.tr(" ", "_").to_sym
-      return unless respond_to?(meth)
-      payload = JSON.parse(request.body.read)
-      public_send(meth, ObjectifiedHash.new(payload))
-    rescue InvalidToken, HookError, JSON::ParserError => e
-      puts e.message
-    end
-    nil
+  def handle(event, payload, token)
+    validate_token(token) if TOKEN
+    meth = event.downcase.tr(" ", "_").to_sym
+    return unless respond_to?(meth)
+    payload = JSON.parse(payload)
+    public_send(meth, ObjectifiedHash.new(payload))
+  rescue InvalidToken, HookError, JSON::ParserError => e
+    puts e.message
   end
 end
