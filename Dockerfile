@@ -6,7 +6,9 @@ RUN mkdir -p /build
 WORKDIR /build
 
 RUN apk add --no-cache \
-    build-base
+    build-base \
+    linux-headers \
+    libc-dev
 
 COPY Gemfile Gemfile.lock ./
 RUN bundle install --deployment --without="development test"
@@ -35,6 +37,6 @@ COPY Gemfile Gemfile.lock ./
 RUN bundle install --deployment --without="development test"
 COPY --chown=app:app ./ ./
 
-EXPOSE 9393
+EXPOSE 9292
 ENTRYPOINT ["bundle", "exec"]
 CMD ["unicorn", "--config-file", "unicorn.rb"]
