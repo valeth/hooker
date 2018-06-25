@@ -17,7 +17,7 @@ RSpec.describe DiscordHooks do
         title: "Project - 5 new commits in master",
         url: "https://gitlab.com/testmaster/project",
         description: desc.chomp,
-        color: 0xFC6D26,
+        color: 0x1F78D1,
         footer: { text: "testmaster/project", icon_url: "https://gitlab.com/testmaster/project/avatar.png" }
       }
     end
@@ -47,7 +47,7 @@ RSpec.describe DiscordHooks do
         title: "Project - Merge request opened: !4 Implement anti-cheat system",
         url: "https://gitlab.com/testmaster/project/merge_requests/4",
         description: "Add a anti-cheat system to keep those cheaters in check.\nAuto-ban included!",
-        color: 0xE24329,
+        color: 0x1F78D1,
         footer: { text: "testmaster/project", icon_url: "https://gitlab.com/testmaster/project/avatar.png" },
         timestamp: Time.parse("2018-06-19 12:28:46 UTC").iso8601
       }
@@ -55,11 +55,13 @@ RSpec.describe DiscordHooks do
     let(:expected_close) do
       expected_open.dup.tap do |x|
         x[:title] = "Project - Merge request closed: !4 Implement anti-cheat system"
+        x[:color] = 0xFC9403
       end
     end
     let(:expected_merge) do
       expected_open.dup.tap do |x|
         x[:title] = "Project - Merge request merged: !4 Implement anti-cheat system"
+        x[:color] = 0x1AAA55
       end
     end
 
@@ -90,7 +92,7 @@ RSpec.describe DiscordHooks do
         title: "Project - Issue opened: #3 Anti cheat not working",
         url: "https://gitlab.com/testmaster/project/issues/3",
         description: "Anti cheat system is not detecting cheaters\nPls fix!",
-        color: 0xfCA326,
+        color: 0x1F78D1,
         footer: { text: "testmaster/project", icon_url: "https://gitlab.com/testmaster/project/avatar.png" },
         timestamp: Time.parse("2018-06-19 12:28:46 UTC").iso8601
       }
@@ -98,6 +100,7 @@ RSpec.describe DiscordHooks do
     let(:expected_close) do
       expected_open.dup.tap do |x|
         x[:title] = "Project - Issue closed: #3 Anti cheat not working"
+        x[:color] = 0x1AAA55
         x.delete(:description)
       end
     end
@@ -124,7 +127,7 @@ RSpec.describe DiscordHooks do
         author: { name: "Testmaster", icon_url: "http://example.com/testmaster.png" },
         title: "Project - Pipeline for master passed (12345678)",
         url: "https://gitlab.com/testmaster/project/commit/679ac842ad4e77a9",
-        color: 0xE24329,
+        color: 0x1AAA55,
         footer: { text: "testmaster/project", icon_url: "https://gitlab.com/testmaster/project/avatar.png" },
         timestamp: Time.parse("2018-06-19 12:28:46 UTC").iso8601
       }
@@ -132,6 +135,7 @@ RSpec.describe DiscordHooks do
     let(:expected_failed) do
       expected_success.dup.tap do |x|
         x[:title] = "Project - Pipeline for master failed (12345678)"
+        x[:color] = 0xDB3B21
       end
     end
 

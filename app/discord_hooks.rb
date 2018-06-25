@@ -5,6 +5,12 @@ require "active_support/core_ext/string/inflections"
 
 module DiscordHooks
   DISCORD_WEBHOOK_URL = ENV["DISCORD_WEBHOOK_URL"].freeze
+  COLOR = {
+    info:  0x1F78D1,
+    alert: 0xFC9403,
+    good:  0x1AAA55,
+    bad:   0xDB3B21
+  }.freeze
 
 module_function
 
@@ -17,7 +23,7 @@ module_function
       title: title(payload, "#{payload.total_commits_count} new commits in #{branch}"),
       url: payload.project.web_url,
       description: payload.commits.map { |c| commit_line(c) }.join("\n"),
-      color: 0xFC6D26,
+      color: COLOR[:info],
       footer: footer(payload)
     }
   end
@@ -27,15 +33,21 @@ module_function
   def merge_request_hook(payload)
     mr = payload.object_attributes
 
-    {
+    embed = {
       author: author(payload.user.username, payload.user.avatar_url),
       title: title(payload, "Merge request #{mr.state}: !#{mr.iid} #{mr.title}"),
       url: mr.url,
       description: mr.description,
-      color: 0xE24329,
       footer: footer(payload),
       timestamp: Time.parse(mr.created_at).iso8601
     }
+    embed[:color] =
+      case mr.state
+      when "closed" then COLOR[:alert]
+      when "merged" then COLOR[:good]
+      else COLOR[:info]
+      end
+    embed
   end
 
   # @param payload [ObjectifiedHash]
@@ -47,11 +59,15 @@ module_function
       author: author(payload.user.username, payload.user.avatar_url),
       title: title(payload, "Issue #{issue.state}: ##{issue.iid} #{issue.title}"),
       url: issue.url,
-      color: 0xfCA326,
       footer: footer(payload),
       timestamp: Time.parse(issue.created_at).iso8601
     }
     embed[:description] = issue.description unless issue.state == "closed"
+    embed[:color] =
+      case issue.state
+      when "closed" then COLOR[:good]
+      else COLOR[:info]
+      end
     embed
   end
 
@@ -77,14 +93,20 @@ module_function
   def pipeline_hook(payload)
     pipeline = payload.object_attributes
 
-    {
+    embed = {
       author: author(payload.user.username, payload.user.avatar_url),
       title: title(payload, "Pipeline for #{pipeline.ref} #{pipeline.detailed_status} (#{pipeline.id})"),
       url: payload.commit.url,
-      color: 0xE24329,
       footer: footer(payload),
       timestamp: Time.parse(pipeline.created_at).iso8601
     }
+    embed[:color] =
+      case pipeline.status
+      when "success" then COLOR[:good]
+      when "failed" then COLOR[:bad]
+      else COLOR[:info]
+      end
+    embed
   end
 
   def title(payload, after)
