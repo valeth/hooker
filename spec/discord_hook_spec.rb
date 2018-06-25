@@ -110,4 +110,37 @@ RSpec.describe DiscordHooks do
       expect(described_class.issue_hook(gl_issue_close)).to eq(expected_close)
     end
   end
+
+  context "pipeline hook" do
+    let(:gl_pipeline_success) { objectified_fixture("gl_pipeline_success.json") }
+    let(:gl_pipeline_failed) do
+      gl_pipeline_success.dup.tap do |x|
+        x.object_attributes.status = "failed"
+        x.object_attributes.detailed_status = "failed"
+      end
+    end
+    let(:expected_success) do
+      {
+        author: { name: "Testmaster", icon_url: "http://example.com/testmaster.png" },
+        title: "Project - Pipeline for master passed (12345678)",
+        url: "https://gitlab.com/testmaster/project/commit/679ac842ad4e77a9",
+        color: 0xE24329,
+        footer: { text: "testmaster/project", icon_url: "https://gitlab.com/testmaster/project/avatar.png" },
+        timestamp: Time.parse("2018-06-19 12:28:46 UTC").iso8601
+      }
+    end
+    let(:expected_failed) do
+      expected_success.dup.tap do |x|
+        x[:title] = "Project - Pipeline for master failed (12345678)"
+      end
+    end
+
+    it "creates an embed on passed pipelines" do
+      expect(described_class.pipeline_hook(gl_pipeline_success)).to eq(expected_success)
+    end
+
+    it "creates an embed for failed pipelines" do
+      expect(described_class.pipeline_hook(gl_pipeline_failed)).to eq(expected_failed)
+    end
+  end
 end
