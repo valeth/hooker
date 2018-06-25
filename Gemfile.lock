@@ -16,6 +16,7 @@ GEM
       domain_name (~> 0.5)
     i18n (1.0.1)
       concurrent-ruby (~> 1.0)
+    kgio (2.11.2)
     method_source (0.9.0)
     mime-types (3.1)
       mime-types-data (~> 3.2015)
@@ -30,6 +31,7 @@ GEM
     rack (2.0.5)
     rack-protection (2.0.3)
       rack
+    raindrops (0.19.0)
     rest-client (2.0.2)
       http-cookie (>= 1.0.2, < 2.0)
       mime-types (>= 1.16, < 4.0)
@@ -59,6 +61,9 @@ GEM
     unf (0.1.4)
       unf_ext
     unf_ext (0.0.7.5)
+    unicorn (5.4.0)
+      kgio (~> 2.6)
+      raindrops (~> 0.7)
 
 PLATFORMS
   ruby
@@ -71,6 +76,7 @@ DEPENDENCIES
   rest-client
   rspec (~> 3.7)
   sinatra
+  unicorn
 
 BUNDLED WITH
-   1.16.1
+   1.16.2

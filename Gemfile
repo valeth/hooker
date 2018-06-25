@@ -1,8 +1,8 @@
 source :rubygems
 
 gem "sinatra"
-gem "puma"
 gem "rest-client"
+gem "unicorn"
 gem "dotenv"
 gem "activesupport"
 
@@ -12,4 +12,5 @@ end
 
 group :development do
   gem "pry"
+  gem "puma"
 end

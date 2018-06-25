@@ -37,4 +37,4 @@ COPY --chown=app:app ./ ./
 
 EXPOSE 9393
 ENTRYPOINT ["bundle", "exec"]
-CMD ["rackup", "--host", "0.0.0.0", "--port", "9393", "config.ru"]
+CMD ["unicorn", "--config-file", "unicorn.rb"]

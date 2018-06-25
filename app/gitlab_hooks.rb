@@ -63,7 +63,7 @@ module_function
 
   HOOKS.each do |event|
     next if respond_to?(event)
-    puts "Using default hook handler for #{event}"
+    # puts "Using default hook handler for #{event}"
     define_method(event) { |payload| forward(event, payload) }
   end
 
