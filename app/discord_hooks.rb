@@ -11,9 +11,10 @@ module_function
   # @param payload [ObjectifiedHash]
   # @return Hash
   def push_hook(payload)
+    branch = payload.ref.split("/").last
     {
       author: author(payload.user_username, payload.user_avatar),
-      title: title(payload, "#{payload.total_commits_count} new commits in #{payload.ref}"),
+      title: title(payload, "#{payload.total_commits_count} new commits in #{branch}"),
       url: payload.project.web_url,
       description: payload.commits.map { |c| commit_line(c) }.join("\n"),
       color: 0xFC6D26,
