@@ -79,15 +79,16 @@ module_function
   end
 
   def handle(request)
-    validate_token(request) if TOKEN
-    gitlab_event = request.fetch_header("HTTP_X_GITLAB_EVENT")
-    meth = gitlab_event.downcase.tr(" ", "_").to_sym
-    return unless respond_to?(meth)
-    payload = JSON.parse(request.body.read)
-    public_send(meth, ObjectifiedHash.new(payload))
-    nil
-  rescue InvalidToken, HookError, JSON::ParserError => e
-    puts e.message
+    Thread.new do
+      validate_token(request) if TOKEN
+      gitlab_event = request.fetch_header("HTTP_X_GITLAB_EVENT")
+      meth = gitlab_event.downcase.tr(" ", "_").to_sym
+      return unless respond_to?(meth)
+      payload = JSON.parse(request.body.read)
+      public_send(meth, ObjectifiedHash.new(payload))
+    rescue InvalidToken, HookError, JSON::ParserError => e
+      puts e.message
+    end
     nil
   end
 end
