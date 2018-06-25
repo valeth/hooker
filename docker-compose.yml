@@ -1,10 +1,17 @@
 version: "3"
 
 services:
+  redis:
+    image: "redis:4-alpine"
+    ports:
+      - "6379:6379"
+
   web:
     image: "registry.gitlab.com/valeth/hooker:latest"
     build:
       context: .
     env_file: ./.env
+    environment:
+      REDIS_URL: "redis://redis:6379/0"
     ports:
       - "9393:9393"

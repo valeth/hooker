@@ -5,6 +5,8 @@ gem "rest-client"
 gem "unicorn"
 gem "dotenv"
 gem "activesupport"
+gem "sidekiq"
+gem "childprocess"
 
 group :test do
   gem "rspec", "~> 3.7"
