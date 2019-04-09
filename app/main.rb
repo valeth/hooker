@@ -8,7 +8,11 @@ require_relative "notification_worker"
 class App < Sinatra::Application
   post "/gitlab" do
     token = request.get_header("HTTP_X_GITLAB_TOKEN")
-    event = request.fetch_header("HTTP_X_GITLAB_EVENT")
-    NotificationWorker.perform_async(event, request.body.read, token)
+    event = request.get_header("HTTP_X_GITLAB_EVENT")
+    if token && event
+      NotificationWorker.perform_async(event, request.body.read, token)
+    else
+      status 400
+    end
   end
 end
