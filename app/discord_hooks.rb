@@ -1,9 +1,13 @@
 # frozen_string_literal: true
 
+# TODO: add logger
+
 require "rest-client"
 require "active_support/core_ext/string/inflections"
+require "json"
 
 module DiscordHooks
+  MAX_TRIES = 3
   DISCORD_WEBHOOK_URL = ENV["DISCORD_WEBHOOK_URL"].freeze
   COLOR = {
     info:  0x1F78D1,
@@ -11,6 +15,15 @@ module DiscordHooks
     good:  0x1AAA55,
     bad:   0xDB3B21
   }.freeze
+
+  class Ratelimited < StandardError
+    attr_reader :duration
+
+    def initialize(duration, message)
+      @duration = duration
+      super(message)
+    end
+  end
 
 module_function
 
@@ -128,9 +141,23 @@ module_function
   # @param event [Symbol]
   # @param payload [ObjectifiedHash]
   def handle(event:, payload:)
+    tries = MAX_TRIES
     return unless respond_to?(event)
     discord_embed = public_send(event, payload)
-    webhook_notify(embeds: [discord_embed])
+
+    begin
+      webhook_notify(embeds: [discord_embed])
+    rescue Ratelimited => e
+      if tries.zero?
+        $stderr.puts("Failed to send to Discord after #{MAX_TRIES} tries, reason: #{e}")
+        return
+      end
+
+      sleep(e.duration)
+      tries -= 1
+      retry
+    end
+
     nil
   end
 
@@ -139,6 +166,20 @@ module_function
     return unless payload.respond_to?(:to_json)
     RestClient.post(DISCORD_WEBHOOK_URL, payload.to_json, content_type: :json)
   rescue RestClient::ExceptionWithResponse => e
-    puts e.response.body
+    parse_error_response(e.response.body)
+  end
+
+  # @param payload [Response]
+  def parse_error_response(response_body)
+    error_response = JSON.parse(response_body)
+
+    case error_response["message"]
+    when /.*rate limited.*/
+      raise Ratelimited.new(error_response["retry_after"], error_response["message"])
+    else
+      $stderr.puts(error_response["message"])
+    end
+  rescue JSON::ParserError
+    $stderr.puts(response_body)
   end
 end

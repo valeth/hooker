@@ -83,6 +83,6 @@ module_function
     payload = JSON.parse(payload)
     public_send(meth, ObjectifiedHash.new(payload))
   rescue InvalidToken, HookError, JSON::ParserError => e
-    puts e.message
+    $stderr.puts(e)
   end
 end
