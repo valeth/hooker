@@ -4,7 +4,7 @@ source "https://rubygems.org"
 
 ruby "~> 2.5"
 
-gem "rack", ">= 2.0.6"
+gem "rack", ">= 2.0.8"
 gem "sinatra", "~> 2.0"
 gem "rest-client", "~> 2.1"
 gem "unicorn", "~> 5.4"
@@ -19,5 +19,5 @@ end
 
 group :development do
   gem "pry"
-  gem "puma", "~> 3.11"
+  gem "puma", ">= 3.12.2"
 end
