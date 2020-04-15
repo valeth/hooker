@@ -19,5 +19,5 @@ end
 
 group :development do
   gem "pry"
-  gem "puma", ">= 3.12.2"
+  gem "puma", "~> 4.3"
 end
