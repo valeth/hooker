@@ -147,4 +147,22 @@ RSpec.describe DiscordHooks do
       expect(described_class.pipeline_hook(gl_pipeline_failed)).to eq(expected_failed)
     end
   end
+
+  context "utils" do
+    let(:fake_commit) do
+      ObjectifiedHash.new(
+        id: "679ac842ad4e77a9",
+        url: "https://gitlab.com/testmaster/project/commit/679ac842ad4e77a9",
+        message: "Just a test commit",
+        author: { name: "Testmaster" }
+      )
+    end
+    let(:fake_commits) do
+      20.times.map { fake_commit }
+    end
+
+    it "drops commits if too many" do
+      expect(described_class.join_commit_lines(fake_commits).size).to be <= described_class::DISCORD_DESC_MAX
+    end
+  end
 end

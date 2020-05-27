@@ -4,11 +4,16 @@
 
 require "rest-client"
 require "active_support/core_ext/string/inflections"
+require "active_support/core_ext/string/filters"
 require "json"
 
 module DiscordHooks
   MAX_TRIES = 3
   DISCORD_WEBHOOK_URL = ENV["DISCORD_WEBHOOK_URL"].freeze
+  DISCORD_DESC_MAX = 2048
+  DISCORD_TITLE_MAX = 256
+  DISCORD_AUTHOR_MAX = 256
+  DISCORD_FOOTER_MAX = 2048
   COLOR = {
     info:  0x1F78D1,
     alert: 0xFC9403,
@@ -35,7 +40,7 @@ module_function
       author: author(payload.user_username, payload.user_avatar),
       title: title(payload, "#{payload.total_commits_count} new commits in #{branch}"),
       url: payload.project.web_url,
-      description: payload.commits.map { |c| commit_line(c) }.join("\n"),
+      description: join_commit_lines(payload.commits),
       color: COLOR[:info],
       footer: footer(payload)
     }
@@ -50,7 +55,7 @@ module_function
       author: author(payload.user.username, payload.user.avatar_url),
       title: title(payload, "Merge request #{mr.state}: !#{mr.iid} #{mr.title}"),
       url: mr.url,
-      description: mr.description,
+      description: mr.description.truncate(DISCORD_DESC_MAX),
       footer: footer(payload),
       timestamp: Time.parse(mr.created_at).iso8601
     }
@@ -123,15 +128,27 @@ module_function
   end
 
   def title(payload, after)
-    "#{payload.project.name} - #{after}"
+    "#{payload.project.name} - #{after}".truncate(DISCORD_TITLE_MAX)
   end
 
   def author(name, icon)
-    { name: name, icon_url: icon }
+    { name: name.truncate(DISCORD_AUTHOR_MAX), icon_url: icon }
   end
 
   def footer(payload)
-    { text: payload.project.path_with_namespace, icon_url: payload.project.avatar_url }
+    { text: payload.project.path_with_namespace.truncate(DISCORD_FOOTER_MAX), icon_url: payload.project.avatar_url }
+  end
+
+  def join_commit_lines(commits)
+    char_count = 0
+    commits
+      .map { |c| commit_line(c) }
+      .take_while do |l|
+        next false if char_count + l.size > DISCORD_DESC_MAX
+        char_count += l.size
+        true
+      end
+      .join("\n")
   end
 
   def commit_line(commit)
