@@ -30,24 +30,28 @@ module_function
   def push_hook(payload)
     raise Unsupported, "no commits, new branch?" \
       if payload.total_commits_count.zero?
+
     forward(__method__, payload)
   end
 
   # @param payload [ObjectifiedHash]
   # @raises Unsupported
   def merge_request_hook(payload)
-    action = payload.object_attributes&.action
+    action = payload.object_attributes&.state
     raise Unsupported, "action #{action} not supported" \
-      unless %w[open close merge].include?(action)
+      unless %w[opened closed merged].include?(action)
+
     forward(__method__, payload)
   end
 
   # @param payload [ObjectifiedHash]
   # @raises Unsupported
   def issue_hook(payload)
-    action = payload.object_attributes&.action
+    # TODO: check if this hook also has the same issue as MR
+    action = payload.object_attributes&.state
     raise Unsupported, "action #{action} not supported" \
-      unless %w[open close].include?(action)
+      unless %w[opened closed].include?(action)
+
     forward(__method__, payload)
   end
 
@@ -55,14 +59,16 @@ module_function
   # @param payload [ObjectifiedHash]
   # @raises Unsupported
   def pipeline_hook(payload)
-    status = payload.object_attributes.status
+    status = payload.object_attributes&.status
     raise Unsupported, "status #{status} not supported" \
       unless %w[success failed].include?(status)
+
     forward(__method__, payload)
   end
 
   HOOKS.each do |event|
     next if respond_to?(event)
+
     define_method(event) { |payload| forward(event, payload) }
   end
 
@@ -80,6 +86,7 @@ module_function
     validate_token(token) if TOKEN
     meth = event.downcase.tr(" ", "_").to_sym
     return unless respond_to?(meth)
+
     payload = JSON.parse(payload)
     public_send(meth, ObjectifiedHash.new(payload))
   rescue InvalidToken, HookError, JSON::ParserError => e

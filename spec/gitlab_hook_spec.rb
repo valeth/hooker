@@ -25,7 +25,7 @@ RSpec.describe GitlabHooks do
     let(:gl_mr_open) { objectified_fixture("gl_mr_open.json") }
     let(:gl_mr_close) { objectified_fixture("gl_mr_close.json") }
     let(:gl_mr_merge) { objectified_fixture("gl_mr_merge.json") }
-    let(:gl_mr_invalid) { ObjectifiedHash.new(object_attributes: { action: "none" }) }
+    let(:gl_mr_invalid) { ObjectifiedHash.new(object_attributes: { state: "none" }) }
 
     it "accepts opened, closed and merged requests" do
       expect { described_class.merge_request_hook(gl_mr_open) }
@@ -46,7 +46,7 @@ RSpec.describe GitlabHooks do
   context "issue hook" do
     let(:gl_issue_open) { objectified_fixture("gl_issue_open.json") }
     let(:gl_issue_close) { objectified_fixture("gl_issue_close.json") }
-    let(:gl_issue_invalid) { ObjectifiedHash.new(object_attributes: { action: "none" }) }
+    let(:gl_issue_invalid) { ObjectifiedHash.new(object_attributes: { state: "none" }) }
 
     it "accepts opened and closed issues" do
       expect { described_class.issue_hook(gl_issue_open) }
