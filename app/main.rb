@@ -16,7 +16,8 @@ class App < Sinatra::Application
     token = request.get_header("HTTP_X_GITLAB_TOKEN")
     event = request.get_header("HTTP_X_GITLAB_EVENT")
     if token && event
-      NotificationWorker.perform_async(event, request.body.read, token)
+      payload = JSON.parse(request.body.read)
+      NotificationWorker.perform_async(event, payload, token)
     else
       status 400
     end
@@ -30,10 +31,10 @@ class App < Sinatra::Application
   # Fallback routes
 
   get "*" do
-    status 400
+    status 404
   end
 
   post "*" do
-    status 400
+    status 404
   end
 end

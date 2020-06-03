@@ -87,7 +87,6 @@ module_function
     meth = event.downcase.tr(" ", "_").to_sym
     return unless respond_to?(meth)
 
-    payload = JSON.parse(payload)
     public_send(meth, ObjectifiedHash.new(payload))
   rescue InvalidToken, HookError, JSON::ParserError => e
     $stderr.puts(e)
