@@ -46,7 +46,7 @@ RSpec.describe GitlabHooks do
   context "issue hook" do
     let(:gl_issue_open) { objectified_fixture("gl_issue_open.json") }
     let(:gl_issue_close) { objectified_fixture("gl_issue_close.json") }
-    let(:gl_issue_invalid) { ObjectifiedHash.new(object_attributes: { state: "none" }) }
+    let(:gl_issue_invalid) { ObjectifiedHash.new(object_attributes: { state: "open", action: "update" }) }
 
     it "accepts opened and closed issues" do
       expect { described_class.issue_hook(gl_issue_open) }

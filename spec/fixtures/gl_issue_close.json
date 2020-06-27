@@ -1,5 +1,6 @@
 {
   "object_attributes": {
+    "action": "close",
     "state": "closed"
   }
 }

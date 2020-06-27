@@ -47,10 +47,10 @@ module_function
   # @param payload [ObjectifiedHash]
   # @raises Unsupported
   def issue_hook(payload)
-    # TODO: check if this hook also has the same issue as MR
-    action = payload.object_attributes&.state
+    # available actions are: open, close, update
+    action = payload.object_attributes&.action
     raise Unsupported, "action #{action} not supported" \
-      unless %w[opened closed].include?(action)
+      unless %w[open close].include?(action)
 
     forward(__method__, payload)
   end
