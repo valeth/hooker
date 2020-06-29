@@ -55,10 +55,10 @@ module_function
       author: author(payload.user.username, payload.user.avatar_url),
       title: title(payload, "Merge request #{mr.state}: !#{mr.iid} #{mr.title}"),
       url: mr.url,
-      description: mr.description.truncate(DISCORD_DESC_MAX),
       footer: footer(payload),
       timestamp: Time.parse(mr.created_at).iso8601
     }
+    embed[:description] = mr.description.truncate(DISCORD_DESC_MAX) unless %w[closed merged].include?(mr.state)
     embed[:color] =
       case mr.state
       when "closed" then COLOR[:alert]

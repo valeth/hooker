@@ -56,12 +56,14 @@ RSpec.describe DiscordHooks do
       expected_open.dup.tap do |x|
         x[:title] = "Project - Merge request closed: !4 Implement anti-cheat system"
         x[:color] = 0xFC9403
+        x.delete(:description)
       end
     end
     let(:expected_merge) do
       expected_open.dup.tap do |x|
         x[:title] = "Project - Merge request merged: !4 Implement anti-cheat system"
         x[:color] = 0x1AAA55
+        x.delete(:description)
       end
     end
 

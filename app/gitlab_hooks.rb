@@ -37,9 +37,11 @@ module_function
   # @param payload [ObjectifiedHash]
   # @raises Unsupported
   def merge_request_hook(payload)
-    action = payload.object_attributes&.state
+    state = payload.object_attributes&.state
+    # available actions: open, close, merge, update?
+    action = payload.object_attributes&.action
     raise Unsupported, "action #{action} not supported" \
-      unless %w[opened closed merged].include?(action)
+      unless %w[open close merge].include?(action)
 
     forward(__method__, payload)
   end
