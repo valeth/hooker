@@ -46,7 +46,6 @@ RSpec.describe DiscordHooks do
         author: { name: "Testmaster", icon_url: "http://example.com/testmaster.png" },
         title: "Project - Merge request opened: !4 Implement anti-cheat system",
         url: "https://gitlab.com/testmaster/project/merge_requests/4",
-        description: "Add a anti-cheat system to keep those cheaters in check.\nAuto-ban included!",
         color: 0x1F78D1,
         footer: { text: "testmaster/project", icon_url: "https://gitlab.com/testmaster/project/avatar.png" },
         timestamp: Time.parse("2018-06-19 12:28:46 UTC").iso8601
@@ -93,7 +92,6 @@ RSpec.describe DiscordHooks do
         author: { name: "Testmaster", icon_url: "http://example.com/testmaster.png" },
         title: "Project - Issue opened: #3 Anti cheat not working",
         url: "https://gitlab.com/testmaster/project/issues/3",
-        description: "Anti cheat system is not detecting cheaters\nPls fix!",
         color: 0x1F78D1,
         footer: { text: "testmaster/project", icon_url: "https://gitlab.com/testmaster/project/avatar.png" },
         timestamp: Time.parse("2018-06-19 12:28:46 UTC").iso8601

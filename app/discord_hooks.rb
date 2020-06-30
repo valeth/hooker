@@ -58,7 +58,6 @@ module_function
       footer: footer(payload),
       timestamp: Time.parse(mr.created_at).iso8601
     }
-    embed[:description] = mr.description.truncate(DISCORD_DESC_MAX) unless %w[closed merged].include?(mr.state)
     embed[:color] =
       case mr.state
       when "closed" then COLOR[:alert]
@@ -80,7 +79,6 @@ module_function
       footer: footer(payload),
       timestamp: Time.parse(issue.created_at).iso8601
     }
-    embed[:description] = issue.description unless issue.state == "closed"
     embed[:color] =
       case issue.state
       when "closed" then COLOR[:good]
