@@ -3,14 +3,23 @@
 mod routes;
 mod router;
 
-use std::{net::SocketAddr, sync::Arc};
+use std::{net::SocketAddr, sync::Arc, collections::HashMap};
+use tokio::sync::RwLock;
 use router::Router;
+pub use hyper::http;
+
+#[derive(Default, Clone)]
+pub struct State {
+    pub hooks: Arc<RwLock<HashMap<String, String>>>,
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     use hyper::service::{make_service_fn, service_fn};
 
     initialize_logger()?;
+
+    let state = initialize_state().await;
 
     let mut routes = Router::new();
     routes.get("/api/hooks", routes::api::get_hooks)
@@ -22,11 +31,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let make_service = make_service_fn(move |_conn| {
         let routes = routes.clone();
+        let state = state.clone();
         async {
             let service = service_fn(move |req| {
                 let routes = routes.clone();
+                let state = state.clone();
                 async move {
-                    let response = routes.handle_route(req).await;
+                    let response = routes.handle_route(req, state).await;
                     Ok::<_, hyper::Error>(response)
                 }
             });
@@ -40,6 +51,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     server.await?;
 
     Ok(())
+}
+
+async fn initialize_state() -> State {
+    let state = State::default();
+
+    let mut hooks = state.hooks.write().await;
+    hooks.insert("111".into(), "12345".into());
+    drop(hooks);
+
+    state
 }
 
 fn initialize_logger() -> Result<(), Box<dyn std::error::Error>> {

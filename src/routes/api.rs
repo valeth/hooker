@@ -1,15 +1,18 @@
 #![allow(unused_variables)]
 
-use crate::router::{Params, Request, Response};
+use crate::{
+    router::{Response, Context},
+    State,
+};
 
-pub async fn get_hooks(request: Request, params: Params) -> Response {
+pub async fn get_hooks(ctx: Context<State>) -> Response {
     todo!()
 }
 
-pub async fn put_hook(request: Request, params: Params) -> Response {
+pub async fn put_hook(ctx: Context<State>) -> Response {
     todo!()
 }
 
-pub async fn delete_hook(request: Request, params: Params) -> Response {
+pub async fn delete_hook(ctx: Context<State>) -> Response {
     todo!()
 }

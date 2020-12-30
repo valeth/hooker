@@ -7,10 +7,12 @@ include = [
     "src/**/*.rs"
 ]
 
+
 [dependencies]
 log = "0.4"
 simplelog = "0.9"
 base64 = "0.13"
+bytes = "1.0"
 async-trait = "0.1"
 matchit = "0.2"
 
