@@ -15,15 +15,18 @@ base64 = "0.13"
 bytes = "1.0"
 async-trait = "0.1"
 matchit = "0.2"
+serde_json = "1.0"
+
+[dependencies.serde]
+version = "1.0"
+features = ["derive"]
 
 [dependencies.tokio]
 version = "1.0"
-default-features = false
 features = ["macros", "rt-multi-thread"]
 
 [dependencies.hyper]
 version = "0.14"
-default-features = false
 features = ["server", "tcp", "http1", "http2"]
 
 

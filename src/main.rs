@@ -2,15 +2,17 @@
 
 mod routes;
 mod router;
+mod models;
 
 use std::{net::SocketAddr, sync::Arc, collections::HashMap};
 use tokio::sync::RwLock;
 use router::Router;
+use models::HookConfig;
 pub use hyper::http;
 
 #[derive(Default, Clone)]
 pub struct State {
-    pub hooks: Arc<RwLock<HashMap<String, String>>>,
+    pub hooks: Arc<RwLock<HashMap<String, HookConfig>>>,
 }
 
 #[tokio::main]
@@ -19,12 +21,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     initialize_logger()?;
 
-    let state = initialize_state().await;
+    let state = State::default();
 
     let mut routes = Router::new();
     routes.get("/api/hooks", routes::api::get_hooks)
         .put("/api/hook", routes::api::put_hook)
-        .delete("/api/hook", routes::api::delete_hook)
+        .delete("/api/hook/:id", routes::api::delete_hook)
         .post("/hooks/gitlab/:id", routes::hooks::post_gitlab);
 
     let routes = Arc::new(routes);
@@ -51,16 +53,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     server.await?;
 
     Ok(())
-}
-
-async fn initialize_state() -> State {
-    let state = State::default();
-
-    let mut hooks = state.hooks.write().await;
-    hooks.insert("111".into(), "12345".into());
-    drop(hooks);
-
-    state
 }
 
 fn initialize_logger() -> Result<(), Box<dyn std::error::Error>> {
