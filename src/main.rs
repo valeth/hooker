@@ -25,7 +25,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     routes.get("/api/hooks", routes::api::get_hooks)
         .put("/api/hook", routes::api::put_hook)
         .delete("/api/hook", routes::api::delete_hook)
-        .post("/hooks/gitlab/:id", routes::post_gitlab);
+        .post("/hooks/gitlab/:id", routes::hooks::post_gitlab);
 
     let routes = Arc::new(routes);
 
