@@ -1,42 +1,28 @@
-# |-------<[ Build ]>-------|
+ARG rust_version="1.48"
 
-FROM ruby:2.5-alpine AS build
-
+FROM rust:${rust_version}-alpine AS build
+RUN apk add --no-cache musl-dev
 RUN mkdir -p /build
 WORKDIR /build
-
-RUN apk add --no-cache \
-    build-base \
-    linux-headers \
-    libc-dev
-
-COPY Gemfile Gemfile.lock ./
-RUN bundle install --deployment --without="development test"
+COPY Cargo.toml Cargo.lock ./
+COPY ./ ./
+ARG build_target="release"
+RUN test ${build_target} = "release" \
+ && cargo build --release \
+ || cargo build
 
 
-# |-------<[ App ]>-------|
-
-FROM ruby:2.5-alpine AS app
-
+FROM rust:${rust_version}-alpine
 LABEL maintainer="Patrick Auernig <dev.patrick.auernig@gmail.com>"
-
-RUN apk add --no-cache \
-    tzdata
-
 ARG user_uid=1000
 ARG user_gid=1000
 RUN addgroup -S -g "$user_gid" app \
- && adduser -S -G app -u "$user_uid" app
-
-RUN mkdir -p /app && chown app:app /app
+ && adduser -S -G app -u "$user_uid" app \
+ && mkdir -p /app \
+ && chown app:app /app
 WORKDIR /app
 USER app
-
-COPY --chown=app:app --from=build /build/vendor/bundle ./vendor/bundle
-COPY Gemfile Gemfile.lock ./
-RUN bundle install --deployment --without="development test"
-COPY --chown=app:app ./ ./
-
+ARG build_target="release"
+COPY --chown=app:app --from=build /build/target/${build_target}/hooker ./hooker
 EXPOSE 9292
-ENTRYPOINT ["bundle", "exec"]
-CMD ["unicorn", "--config-file", "unicorn.rb"]
+CMD ["./hooker"]

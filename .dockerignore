@@ -1,6 +1,4 @@
 *
-!app
-!public
-!Gemfile*
-!config.ru
-!unicorn.rb
+!src/
+!Cargo.toml
+!Cargo.lock

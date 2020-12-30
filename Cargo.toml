@@ -1,0 +1,29 @@
+[package]
+name = "hooker"
+version = "0.2.0"
+edition = "2018"
+publish = false
+include = [
+    "src/**/*.rs"
+]
+
+[dependencies]
+log = "0.4"
+simplelog = "0.9"
+base64 = "0.13"
+async-trait = "0.1"
+matchit = "0.2"
+
+[dependencies.tokio]
+version = "1.0"
+default-features = false
+features = ["macros", "rt-multi-thread"]
+
+[dependencies.hyper]
+version = "0.14"
+default-features = false
+features = ["server", "tcp", "http1", "http2"]
+
+
+[profile.release]
+lto = "fat" # "thin"
