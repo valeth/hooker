@@ -1,6 +1,5 @@
 /target
-/.env
 
-# Production
-/.bundle
-/vendor
+# IDE stuff
+/.idea
+/.vscode
