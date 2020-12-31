@@ -10,6 +10,9 @@ use router::Router;
 use models::HookConfig;
 pub use hyper::http;
 
+pub type Error = Box<dyn std::error::Error>;
+pub type Result<T, E = Error> = std::result::Result<T, E>;
+
 #[derive(Default, Clone)]
 pub struct State {
     pub hooks: Arc<RwLock<HashMap<String, HookConfig>>>,

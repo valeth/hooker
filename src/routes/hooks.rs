@@ -2,28 +2,29 @@ use crate::{
     router::{Response, Context},
     http::StatusCode,
     State,
+    Result,
 };
 
-pub async fn post_gitlab(ctx: Context<State>) -> Response {
+pub async fn post_gitlab(ctx: Context<State>) -> Result<Response> {
     if let Err(_) = valid_token(&ctx).await {
         log::error!("GitLab token validation failed");
-        return Response::builder()
+        let res = Response::builder()
             .status(StatusCode::FORBIDDEN)
-            .body("".into())
-            .unwrap();
+            .body("".into())?;
+        return Ok(res);
     }
 
     if let Some(event) = ctx.request.headers().get("HTTP_X_GITLAB_EVENT") {
         let event = event.to_str().unwrap().to_string();
         let payload = hyper::body::aggregate(ctx.request).await.unwrap();
         tokio::spawn(handle_event(event, payload));
-        return Response::default();
+        return Ok(Response::default());
     }
 
-    Response::builder()
+    let res = Response::builder()
         .status(StatusCode::BAD_REQUEST)
-        .body("".into())
-        .unwrap()
+        .body("".into())?;
+    Ok(res)
 }
 
 async fn valid_token(ctx: &Context<State>) -> Result<(), Box<dyn std::error::Error>> {

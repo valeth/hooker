@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use async_trait::async_trait;
+use crate::Result;
 
 pub type Request<T = hyper::Body> = hyper::Request<T>;
 pub type Response<T = hyper::Body> = hyper::Response<T>;
@@ -19,19 +20,19 @@ where T: Send + Sync
 pub trait RouteHandler<C>
 where C: Send + Sync + 'static
 {
-    async fn call(&self, ctx: Context<C>) -> Response;
+    async fn call(&self, ctx: Context<C>) -> Result<Response>;
 }
 
 #[async_trait]
-impl<F, T, C> RouteHandler<C> for T
+impl<F, T, C, O> RouteHandler<C> for T
 where T: Send + Sync + 'static,
       C: Send + Sync + 'static,
       T: Fn(Context<C>) -> F,
-      F: std::future::Future + Send + 'static,
-      F::Output: Into<Response>
+      F: std::future::Future<Output = Result<O>> + Send + 'static,
+      O: Into<Response> + 'static
 {
-    async fn call(&self, ctx: Context<C>) -> Response {
-        self(ctx).await.into()
+    async fn call(&self, ctx: Context<C>) -> Result<Response> {
+        Ok(self(ctx).await?.into())
     }
 }
 
@@ -66,7 +67,17 @@ where C: Send + Sync + 'static
             if let Ok(path_handler) = method_handler.match_path(path) {
                 log::debug!("{} {}", method, path);
                 let ctx = Context { request, params: path_handler.params, shared };
-                return path_handler.value.call(ctx).await
+                return match path_handler.value.call(ctx).await {
+                    Ok(response) => response,
+                    Err(err) => {
+                        log::error!("{}", err);
+                        Response::builder()
+                            .status(StatusCode::INTERNAL_SERVER_ERROR)
+                            .body(Body::empty())
+                            .unwrap()
+                    }
+                }
+
             } else {
                 log::debug!("No handler for {} {}", method, path);
             }
