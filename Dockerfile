@@ -25,4 +25,4 @@ USER app
 ARG build_target="release"
 COPY --chown=app:app --from=build /build/target/${build_target}/hooker ./hooker
 EXPOSE 9292
-CMD ["./hooker"]
+ENTRYPOINT ["./hooker"]

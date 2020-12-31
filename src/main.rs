@@ -16,13 +16,39 @@ pub struct State {
     pub users: Arc<RwLock<HashMap<String, String>>>,
 }
 
+#[derive(Debug, argh::FromArgs)]
+/// GitLab to Discord webhook server
+struct AppArgs {
+    #[argh(option, from_str_fn(parse_user))]
+    /// an colon separated pair of user and hashed password
+    user: Vec<(String, String)>
+}
+
+fn parse_user(value: &str) -> Result<(String, String), String> {
+    let parts = value.split(':').collect::<Vec<_>>();
+    if let [username, password] = parts[..] {
+        if password.len() != 64 {
+            Err("Password hash has invalid length".into())
+        } else {
+            Ok((username.to_string(), password.to_string()))
+        }
+    } else {
+        Err("Invalid format, needs to be user:pass".into())
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     use hyper::service::{make_service_fn, service_fn};
 
+    let args: AppArgs = argh::from_env();
+
     initialize_logger()?;
 
     let state = State::default();
+    let mut users = state.users.write().await;
+    users.extend(args.user);
+    drop(users);
 
     let mut routes = Router::new();
     routes.get("/api/hooks", routes::api::get_hooks)
