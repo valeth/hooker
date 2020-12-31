@@ -13,6 +13,7 @@ pub use hyper::http;
 #[derive(Default, Clone)]
 pub struct State {
     pub hooks: Arc<RwLock<HashMap<String, HookConfig>>>,
+    pub users: Arc<RwLock<HashMap<String, String>>>,
 }
 
 #[tokio::main]
