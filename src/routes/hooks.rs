@@ -6,8 +6,8 @@ use crate::{
 };
 
 pub async fn post_gitlab(ctx: Context<State>) -> Result<Response> {
-    if let Err(_) = valid_token(&ctx).await {
-        log::error!("GitLab token validation failed");
+    if let Err(e) = valid_token(&ctx).await {
+        log::error!("GitLab token validation failed: {}", e);
         let res = Response::builder()
             .status(StatusCode::FORBIDDEN)
             .body("".into())?;
@@ -27,18 +27,25 @@ pub async fn post_gitlab(ctx: Context<State>) -> Result<Response> {
     Ok(res)
 }
 
-async fn valid_token(ctx: &Context<State>) -> Result<(), Box<dyn std::error::Error>> {
+async fn valid_token(ctx: &Context<State>) -> Result<()> {
     let id = ctx.params.by_name("id").unwrap();
     let hooks = ctx.shared.hooks.read().await;
 
-    let hook_config = hooks.get(id).unwrap();
-    let remote_token = ctx.request.headers().get("HTTP_X_GITLAB_TOKEN").unwrap().to_str()?;
+    let hook_config = hooks
+        .get(id)
+        .ok_or_else(|| format!("No hook config found for id {}", id))?;
+
+    let remote_token = ctx.request.headers()
+        .get("HTTP_X_GITLAB_TOKEN")
+        .ok_or_else(|| "Token header missing")?
+        .to_str()
+        .unwrap();
 
     if hook_config.gitlab_token != remote_token {
-        return Err("Invalid token".into());
+        Err("Invalid token".into())
+    } else {
+        Ok(())
     }
-
-    Ok(())
 }
 
 async fn handle_event(event: String, payload: impl bytes::Buf) {
