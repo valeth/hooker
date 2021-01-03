@@ -22,6 +22,10 @@ argh = "0.1"
 anyhow = "1.0"
 hyper-rustls = "0.22"
 
+[dependencies.uuid]
+version = "0.8"
+features = ["v4", "serde"]
+
 [dependencies.chrono]
 version = "0.4"
 features = ["serde"]

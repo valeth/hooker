@@ -1,10 +1,14 @@
+use std::str::FromStr;
 use anyhow::{anyhow, bail};
 use crate::{
     router::Context,
     http::{StatusCode, Response},
     State,
     Result,
-    models::discord::Embed,
+    models::{
+        HookId,
+        discord::Embed
+    },
 };
 
 pub async fn post_gitlab(ctx: Context<State>) -> Result<Response> {
@@ -29,11 +33,11 @@ pub async fn post_gitlab(ctx: Context<State>) -> Result<Response> {
 }
 
 async fn valid_token(ctx: &Context<State>) -> Result<()> {
-    let id = ctx.params.by_name("id").unwrap();
+    let id = HookId::from_str(ctx.params.by_name("id").unwrap())?;
     let hooks = ctx.shared.hooks.read().await;
 
     let hook_config = hooks
-        .get(id)
+        .get(&id)
         .ok_or_else(|| anyhow!("No hook config found for id {}", id))?;
 
     let remote_token = ctx.request.headers()
@@ -65,9 +69,9 @@ async fn handle_event(ctx: Context<State>, event: String) {
 
     match result {
         Ok(Some(embed)) => {
-            let id = ctx.params.by_name("id").unwrap();
+            let id = HookId::from_str(ctx.params.by_name("id").unwrap()).unwrap();
             let hook_configs = ctx.shared.hooks.read().await;
-            let hook_config = hook_configs.get(id).unwrap();
+            let hook_config = hook_configs.get(&id).unwrap();
             let uri = &hook_config.discord_url;
 
             log::debug!("{:#?}", embed);

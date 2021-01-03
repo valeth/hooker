@@ -8,12 +8,12 @@ mod models;
 use std::{net::SocketAddr, sync::Arc, collections::HashMap};
 use tokio::sync::RwLock;
 use router::Router;
-use models::HookConfig;
+use models::{HookConfig, HookId};
 pub use anyhow::Result;
 
 #[derive(Default, Clone)]
 pub struct State {
-    pub hooks: Arc<RwLock<HashMap<String, HookConfig>>>,
+    pub hooks: Arc<RwLock<HashMap<HookId, HookConfig>>>,
     pub users: Arc<RwLock<HashMap<String, String>>>,
 }
 

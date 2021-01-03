@@ -1,7 +1,8 @@
+use std::str::FromStr;
 use bytes::Buf;
 use crate::{
     router::Context,
-    models::HookConfig,
+    models::{CreateHookConfig, HookConfig, HookId},
     http::{StatusCode, Response},
     State,
     Result,
@@ -36,21 +37,26 @@ pub async fn put_hook(ctx: Context<State>) -> Result<Response> {
     require_auth!(ctx);
 
     let reader = hyper::body::aggregate(ctx.request).await?.reader();
-    let hook_config: HookConfig = serde_json::from_reader(reader)?;
-    let hook_id = hook_config.id.clone();
+    let config: CreateHookConfig =  serde_json::from_reader(reader)?;
+    let config: HookConfig = config.into();
 
-    let mut hook_configs = ctx.shared.hooks.write().await;
-    hook_configs.insert(hook_id, hook_config);
+    let mut configs = ctx.shared.hooks.write().await;
+    configs.insert(config.id.clone(), config.clone());
 
-    Ok(Response::default())
+    let json = serde_json::to_string(&config)?;
+    let res = Response::builder()
+        .header("Content-Type", "application/json")
+        .body(json.into())?;
+
+    Ok(res)
 }
 
 pub async fn delete_hook(ctx: Context<State>) -> Result<Response> {
     require_auth!(ctx);
 
-    let id = ctx.params.by_name("id").unwrap();
-    let mut hook_configs = ctx.shared.hooks.write().await;
-    hook_configs.remove(id).unwrap();
+    let id = HookId::from_str(ctx.params.by_name("id").unwrap())?;
+    let mut configs = ctx.shared.hooks.write().await;
+    configs.remove(&id).unwrap();
 
     Ok(Response::default())
 }
