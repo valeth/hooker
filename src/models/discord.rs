@@ -74,11 +74,11 @@ impl From<gitlab::IssueEvent> for Embed {
 
         Self {
             author: Author {
-                name: ev.user.name,
-                icon_url: ev.user.avatar_url.unwrap(),
+                name: ev.user.username,
+                icon_url: ev.user.avatar_url,
             },
             title: format!(
-                "{} - Issue {}: #{} {}", ev.project.name, issue.state, issue.id, issue.title
+                "{} - Issue {}: #{} {}", ev.project.name, issue.state, issue.issue_id, issue.title
             ),
             url: issue.url,
             footer: Footer {
@@ -99,11 +99,11 @@ impl From<gitlab::MergeRequestEvent> for Embed {
 
         Self {
             author: Author {
-                name: ev.user.name,
-                icon_url: ev.user.avatar_url.unwrap(),
+                name: ev.user.username,
+                icon_url: ev.user.avatar_url,
             },
             title: format!(
-                "{} - Merge request {}: !{} {}", ev.project.name, mr.state, mr.id, mr.title
+                "{} - Merge request {}: !{} {}", ev.project.name, mr.state, mr.issue_id, mr.title
             ),
             url: mr.url,
             footer: Footer {
@@ -128,8 +128,8 @@ impl From<gitlab::PipelineEvent> for Embed {
 
         Self {
             author: Author {
-                name: ev.user.name,
-                icon_url: ev.user.avatar_url.unwrap(),
+                name: ev.user.username,
+                icon_url: ev.user.avatar_url,
             },
             title: format!(
                 "{} - Pipeline for {} {} ({})",

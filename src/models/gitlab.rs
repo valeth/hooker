@@ -13,8 +13,8 @@ pub struct PipelineAttributes {
 
 #[derive(Debug, Deserialize)]
 pub struct IssueAttributes {
-    #[serde(alias = "iid")]
-    pub id: u64,
+    #[serde(rename = "iid")]
+    pub issue_id: u64,
     pub action: String,
     pub state: String,
     pub title: String,
@@ -24,9 +24,8 @@ pub struct IssueAttributes {
 
 #[derive(Debug, Deserialize)]
 pub struct User {
-    #[serde(alias = "username")]
-    pub name: String,
-    pub avatar_url: Option<String>,
+    pub username: String,
+    pub avatar_url: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -34,7 +33,12 @@ pub struct Commit {
     pub id: String,
     pub url: String,
     pub message: String,
-    pub author: User,
+    pub author: CommitAuthor,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CommitAuthor {
+    pub name: String,
 }
 
 #[derive(Debug, Deserialize)]
