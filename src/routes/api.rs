@@ -34,6 +34,8 @@ pub async fn get_hooks(ctx: Context<State>) -> Result<Response> {
 }
 
 pub async fn put_hook(ctx: Context<State>) -> Result<Response> {
+    use crate::store::store_hook_config;
+
     require_auth!(ctx);
 
     let reader = hyper::body::aggregate(ctx.request).await?.reader();
@@ -42,6 +44,8 @@ pub async fn put_hook(ctx: Context<State>) -> Result<Response> {
 
     let mut configs = ctx.shared.hooks.write().await;
     configs.insert(config.id.clone(), config.clone());
+
+    store_hook_config(&config)?;
 
     let json = serde_json::to_string(&config)?;
     let res = Response::builder()
@@ -52,11 +56,15 @@ pub async fn put_hook(ctx: Context<State>) -> Result<Response> {
 }
 
 pub async fn delete_hook(ctx: Context<State>) -> Result<Response> {
+    use crate::store::delete_hook_config;
+
     require_auth!(ctx);
 
     let id = HookId::from_str(ctx.params.by_name("id").unwrap())?;
     let mut configs = ctx.shared.hooks.write().await;
     configs.remove(&id).unwrap();
+
+    delete_hook_config(&id)?;
 
     Ok(Response::default())
 }

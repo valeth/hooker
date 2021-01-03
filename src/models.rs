@@ -4,7 +4,7 @@ pub mod gitlab;
 use serde::{Serialize, Deserialize};
 pub use uuid::Uuid as HookId;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HookConfig {
     pub id: HookId,
     pub description: String,

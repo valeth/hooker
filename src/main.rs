@@ -4,6 +4,7 @@ mod http;
 mod routes;
 mod router;
 mod models;
+mod store;
 
 use std::{net::SocketAddr, sync::Arc, collections::HashMap};
 use tokio::sync::RwLock;
@@ -15,6 +16,18 @@ pub use anyhow::Result;
 pub struct State {
     pub hooks: Arc<RwLock<HashMap<HookId, HookConfig>>>,
     pub users: Arc<RwLock<HashMap<String, String>>>,
+}
+
+impl State {
+    pub fn load() -> Result<Self> {
+        log::debug!("Restoring hook configurations");
+        let hooks = store::load_all_hook_configs()?;
+
+        Ok(Self {
+            hooks: Arc::new(RwLock::new(hooks)),
+            ..Default::default()
+        })
+    }
 }
 
 #[derive(Debug, argh::FromArgs)]
@@ -46,7 +59,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     initialize_logger()?;
 
-    let state = State::default();
+    let state = State::load()?;
     let mut users = state.users.write().await;
     users.extend(args.user);
     drop(users);
