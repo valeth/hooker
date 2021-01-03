@@ -1,11 +1,11 @@
-use std::str::FromStr;
 use bytes::Buf;
 use crate::{
+    models::CreateHookConfig,
     router::Context,
-    models::{CreateHookConfig, HookConfig, HookId},
     http::{StatusCode, Response},
-    State,
+    store::HookConfig,
     Result,
+    State,
 };
 
 macro_rules! require_auth {
@@ -23,31 +23,26 @@ macro_rules! require_auth {
 pub async fn get_hooks(ctx: Context<State>) -> Result<Response> {
     require_auth!(ctx);
 
-    let hook_configs = ctx.shared.hooks.read().await;
-    let hooks: Vec<_> = hook_configs.values().collect();
+    let hooks = ctx.shared.hooks.all().await;
     let json = serde_json::to_string(&hooks)?;
 
     let res = Response::builder()
         .header("Content-Type", "application/json")
         .body(json.into())?;
+
     Ok(res)
 }
 
-pub async fn put_hook(ctx: Context<State>) -> Result<Response> {
-    use crate::store::store_hook_config;
-
+pub async fn put_hook(mut ctx: Context<State>) -> Result<Response> {
     require_auth!(ctx);
 
     let reader = hyper::body::aggregate(ctx.request).await?.reader();
     let config: CreateHookConfig =  serde_json::from_reader(reader)?;
     let config: HookConfig = config.into();
 
-    let mut configs = ctx.shared.hooks.write().await;
-    configs.insert(config.id.clone(), config.clone());
-
-    store_hook_config(&config)?;
-
     let json = serde_json::to_string(&config)?;
+    ctx.shared.hooks.insert(config).await?;
+
     let res = Response::builder()
         .header("Content-Type", "application/json")
         .body(json.into())?;
@@ -55,16 +50,11 @@ pub async fn put_hook(ctx: Context<State>) -> Result<Response> {
     Ok(res)
 }
 
-pub async fn delete_hook(ctx: Context<State>) -> Result<Response> {
-    use crate::store::delete_hook_config;
-
+pub async fn delete_hook(mut ctx: Context<State>) -> Result<Response> {
     require_auth!(ctx);
 
-    let id = HookId::from_str(ctx.params.by_name("id").unwrap())?;
-    let mut configs = ctx.shared.hooks.write().await;
-    configs.remove(&id).unwrap();
-
-    delete_hook_config(&id)?;
+    let id = ctx.params.by_name("id").expect("id parameter");
+    ctx.shared.hooks.delete(id).await?;
 
     Ok(Response::default())
 }

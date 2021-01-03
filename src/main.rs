@@ -9,22 +9,22 @@ mod store;
 use std::{net::SocketAddr, sync::Arc, collections::HashMap};
 use tokio::sync::RwLock;
 use router::Router;
-use models::{HookConfig, HookId};
+use store::HookRegistry;
+
 pub use anyhow::Result;
 
 #[derive(Default, Clone)]
 pub struct State {
-    pub hooks: Arc<RwLock<HashMap<HookId, HookConfig>>>,
+    pub hooks: HookRegistry,
     pub users: Arc<RwLock<HashMap<String, String>>>,
 }
 
 impl State {
     pub fn load() -> Result<Self> {
         log::debug!("Restoring hook configurations");
-        let hooks = store::load_all_hook_configs()?;
 
         Ok(Self {
-            hooks: Arc::new(RwLock::new(hooks)),
+            hooks: HookRegistry::load()?,
             ..Default::default()
         })
     }
