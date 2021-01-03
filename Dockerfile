@@ -1,4 +1,4 @@
-ARG rust_version="1.48"
+ARG rust_version="1.49"
 
 FROM rust:${rust_version}-alpine AS build
 RUN apk add --no-cache musl-dev
@@ -18,8 +18,8 @@ ARG user_uid=1000
 ARG user_gid=1000
 RUN addgroup -S -g "$user_gid" app \
  && adduser -S -G app -u "$user_uid" app \
- && mkdir -p /app \
- && chown app:app /app
+ && mkdir -p /app /app/data \
+ && chown -R app:app /app
 WORKDIR /app
 USER app
 ARG build_target="release"
