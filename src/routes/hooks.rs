@@ -7,6 +7,9 @@ use crate::{
     Result,
 };
 
+const GITLAB_EVENT_HEADER: &str = "X-Gitlab-Event";
+const GITLAB_TOKEN_HEADER: &str = "X-Gitlab-Token";
+
 pub async fn post_gitlab(ctx: Context<State>) -> Result<Response> {
     if let Err(e) = valid_token(&ctx).await {
         log::error!("GitLab token validation failed: {}", e);
@@ -16,7 +19,7 @@ pub async fn post_gitlab(ctx: Context<State>) -> Result<Response> {
         return Ok(res);
     }
 
-    if let Some(event) = ctx.request.headers().get("HTTP_X_GITLAB_EVENT") {
+    if let Some(event) = ctx.request.headers().get(GITLAB_EVENT_HEADER) {
         let event = event.to_str().unwrap().to_string();
         tokio::spawn(handle_event(ctx, event));
         return Ok(Response::default());
@@ -33,7 +36,7 @@ async fn valid_token(ctx: &Context<State>) -> Result<()> {
     let hook_config = ctx.shared.hooks.get(id).await?;
 
     let remote_token = ctx.request.headers()
-        .get("HTTP_X_GITLAB_TOKEN")
+        .get(GITLAB_TOKEN_HEADER)
         .ok_or_else(|| anyhow!("Token header missing"))?
         .to_str()
         .unwrap();
