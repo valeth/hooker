@@ -1,4 +1,5 @@
 use anyhow::{anyhow, bail};
+use bytes::Buf;
 use crate::{
     router::Context,
     http::{StatusCode, Response},
@@ -75,7 +76,14 @@ async fn handle_event(ctx: Context<State>, event: String) {
 
             match ctx.client.post(uri, json).await {
                 Err(err) => log::error!("{}", err),
-                Ok(res) => log::debug!("{:?}", res.status()),
+                Ok(res) if res.status().is_client_error() => {
+                    log::error!("Headers:\n{:#?}", res.headers());
+                    let buf = hyper::body::aggregate(res).await.unwrap();
+                    let reader = buf.reader();
+                    let json: serde_json::Value = serde_json::from_reader(reader).unwrap();
+                    log::error!("Response Payload:\n{:?}", json);
+                },
+                Ok(_) => ()
             }
         },
         Err(err) => log::error!("{}", err),

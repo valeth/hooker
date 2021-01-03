@@ -1,12 +1,27 @@
-use serde::Serialize;
+use serde::{Serialize, Serializer};
 use chrono::DateTime;
 use super::gitlab;
 
-mod color {
-    pub const INFO: u32 = 0x1F78D1;
-    pub const ALERT: u32 = 0xFC9403;
-    pub const GOOD: u32 = 0x1AAA555;
-    pub const BAD: u32 = 0xDB3B21;
+#[derive(Debug)]
+pub struct Color(u8, u8, u8);
+
+impl Color {
+    pub const INFO: Self = Self(0x1F, 0x78, 0xD1);
+    pub const ALERT: Self = Self(0xFC, 0x94, 0x03);
+    pub const GOOD: Self = Self(0x1A, 0xAA, 0x55);
+    pub const BAD: Self = Self(0xDB, 0x3B, 0x21);
+}
+
+impl Serialize for Color {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where S: Serializer
+    {
+        let value: u32 = 0x00_00_00_00
+            | ((self.0 as u32) << 16)
+            | ((self.1 as u32) << 8)
+            | (self.2 as u32);
+        serializer.serialize_u32(value)
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -14,7 +29,7 @@ pub struct Embed {
     pub author: Author,
     pub title: String,
     pub url: String,
-    pub color: u32,
+    pub color: Color,
     pub footer: Footer,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<DateTime<chrono::FixedOffset>>,
@@ -56,7 +71,7 @@ impl From<gitlab::PushEvent> for Embed {
             },
             title,
             url: ev.project.web_url,
-            color: color::INFO,
+            color: Color::INFO,
             footer: Footer {
                 text: ev.project.path_with_namespace,
                 icon_url: ev.project.avatar_url,
@@ -86,7 +101,7 @@ impl From<gitlab::IssueEvent> for Embed {
                 icon_url: ev.project.avatar_url,
             },
             timestamp: Some(timestamp),
-            color: if issue.state == "closed" { color::GOOD } else { color::INFO },
+            color: if issue.state == "closed" { Color::GOOD } else { Color::INFO },
             description: None,
         }
     }
@@ -112,9 +127,9 @@ impl From<gitlab::MergeRequestEvent> for Embed {
             },
             timestamp: Some(timestamp),
             color: match &*mr.state {
-                "closed" => color::ALERT,
-                "merged" => color::GOOD,
-                _ => color::INFO,
+                "closed" => Color::ALERT,
+                "merged" => Color::GOOD,
+                _ => Color::INFO,
             },
             description: None,
         }
@@ -142,9 +157,9 @@ impl From<gitlab::PipelineEvent> for Embed {
             },
             timestamp: Some(timestamp),
             color: match &*pipeline.status {
-                "success" => color::GOOD,
-                "failed" => color::BAD,
-                _ => color::INFO,
+                "success" => Color::GOOD,
+                "failed" => Color::BAD,
+                _ => Color::INFO,
             },
             description: None,
         }
