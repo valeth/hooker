@@ -1,3 +1,6 @@
+pub mod discord;
+pub mod gitlab;
+
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

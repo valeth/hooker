@@ -1,5 +1,6 @@
 #![warn(rust_2018_idioms)]
 
+mod http;
 mod routes;
 mod router;
 mod models;
@@ -8,10 +9,7 @@ use std::{net::SocketAddr, sync::Arc, collections::HashMap};
 use tokio::sync::RwLock;
 use router::Router;
 use models::HookConfig;
-pub use hyper::http;
-
-pub type Error = Box<dyn std::error::Error>;
-pub type Result<T, E = Error> = std::result::Result<T, E>;
+pub use anyhow::Result;
 
 #[derive(Default, Clone)]
 pub struct State {
@@ -53,7 +51,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     users.extend(args.user);
     drop(users);
 
-    let mut routes = Router::new();
+    let client = http::Client::new();
+    let mut routes = Router::new(client);
     routes.get("/api/hooks", routes::api::get_hooks)
         .put("/api/hook", routes::api::put_hook)
         .delete("/api/hook/:id", routes::api::delete_hook)

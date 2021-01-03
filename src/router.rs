@@ -1,18 +1,20 @@
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    sync::Arc
+};
 use async_trait::async_trait;
-use crate::Result;
+use crate::{
+    http::{self, Request, Response, HttpMethod, Params},
+    Result
+};
 
-pub type Request<T = hyper::Body> = hyper::Request<T>;
-pub type Response<T = hyper::Body> = hyper::Response<T>;
-pub type HttpMethod = hyper::http::Method;
-pub type Params = matchit::Params;
 
-#[derive(Debug)]
 pub struct Context<T>
 where T: Send + Sync
 {
     pub request: Request,
     pub params: Params,
+    pub client: Arc<http::Client>,
     pub shared: T
 }
 
@@ -39,6 +41,7 @@ where T: Send + Sync + 'static,
 pub struct Router<C>
 where C: Send + Sync + 'static
 {
+    client: Arc<http::Client>,
     routes: HashMap<HttpMethod, matchit::Node<Box<dyn RouteHandler<C> + Send + Sync>>>,
 }
 
@@ -47,13 +50,16 @@ where C: Send + Sync + 'static
 {
     const METHODS: [HttpMethod; 4] = [HttpMethod::GET, HttpMethod::POST, HttpMethod::DELETE, HttpMethod::PUT];
 
-    pub fn new() -> Self {
+    pub fn new(client: http::Client) -> Self {
         let mut routes = HashMap::new();
         for method in Self::METHODS.iter() {
             routes.insert(method.clone(), matchit::Node::default());
         }
 
-        Self { routes }
+        Self {
+            client: Arc::new(client),
+            routes
+        }
     }
 
     pub async fn handle_route(&self, request: Request, shared: C) -> Response {
@@ -66,7 +72,12 @@ where C: Send + Sync + 'static
 
             if let Ok(path_handler) = method_handler.match_path(path) {
                 log::debug!("{} {}", method, path);
-                let ctx = Context { request, params: path_handler.params, shared };
+                let ctx = Context {
+                    request,
+                    params: path_handler.params,
+                    shared,
+                    client: self.client.clone()
+                };
                 return match path_handler.value.call(ctx).await {
                     Ok(response) => response,
                     Err(err) => {

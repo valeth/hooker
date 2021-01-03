@@ -1,8 +1,8 @@
 use bytes::Buf;
 use crate::{
-    router::{Context, Response},
+    router::Context,
     models::HookConfig,
-    http::StatusCode,
+    http::{StatusCode, Response},
     State,
     Result,
 };
