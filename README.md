@@ -20,7 +20,7 @@ The server comes with a simple API to manage webhooks.
 The API uses [Basic HTTP Authentication]
 
 ### `GET /api/hooks`
-<span style="color:orange">`(!)` Requires authentication</span>
+> (!) Requires authentication
 
 Response payload:
 ```json
@@ -33,7 +33,7 @@ Response payload:
 ```
 
 ### `PUT /api/hook`
-<span style="color:orange">`(!)` Requires authentication</span>
+> (!) Requires authentication
 
 Request payload:
 ```json
@@ -55,10 +55,20 @@ Response payload:
 ```
 
 ### `DELETE /api/hook/:id`
-<span style="color:orange">`(!)` Requires authentication</span>
+> (!) Requires authentication
+
+Request Parameters:
+```
+id: String
+```
 
 ### `POST /hooks/gitlab/:id`
-<span style="color:orange">`(!)` Requires valid token</span>
+> (!) Requires valid token
+
+Request Parameters:
+```
+id: String
+```
 
 
 > **Note**: The GitLab webhook test events provide a different payload than actual events.
