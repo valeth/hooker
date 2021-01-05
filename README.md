@@ -28,7 +28,8 @@ Response payload:
     "id": "String",
     "description": "String",
     "gitlab_token": "String",
-    "discord_url": "URI"
+    "discord_url": "URI",
+    "created_at": "DateTime"
 }]
 ```
 

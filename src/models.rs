@@ -18,6 +18,7 @@ impl Into<HookConfig> for CreateHookConfig {
             description: self.description,
             gitlab_token: self.gitlab_token,
             discord_url: self.discord_url,
+            created_at: chrono::Utc::now(),
         }
     }
 

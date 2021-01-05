@@ -108,6 +108,7 @@ where C: Send + Sync + 'static
         self.add_handler(HttpMethod::POST, path, handler)
     }
 
+    #[allow(dead_code)]
     pub fn put(&mut self, path: &str, handler: impl RouteHandler<C> + Send + Sync + 'static) -> &mut Self {
         self.add_handler(HttpMethod::PUT, path, handler)
     }

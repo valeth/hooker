@@ -10,6 +10,7 @@ use std::{
 use anyhow::anyhow;
 use serde::{Serialize, Deserialize};
 use tokio::sync::RwLock;
+use chrono::DateTime;
 use crate::Result;
 
 const STORAGE_ROOT: &str = "./data";
@@ -46,6 +47,8 @@ pub struct HookConfig {
     pub description: String,
     pub gitlab_token: String,
     pub discord_url: String,
+    #[serde(default = "chrono::Utc::now")]
+    pub created_at: DateTime<chrono::Utc>,
 }
 
 #[derive(Clone, Default)]
