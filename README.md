@@ -32,7 +32,7 @@ Response payload:
 }]
 ```
 
-### `PUT /api/hook`
+### `POST /api/hook`
 > (!) Requires authentication
 
 Request payload:

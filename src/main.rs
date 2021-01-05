@@ -67,7 +67,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = http::Client::new();
     let mut routes = Router::new(client);
     routes.get("/api/hooks", routes::api::get_hooks)
-        .put("/api/hook", routes::api::put_hook)
+        .post("/api/hook", routes::api::post_hook)
         .delete("/api/hook/:id", routes::api::delete_hook)
         .post("/hooks/gitlab/:id", routes::hooks::post_gitlab);
 

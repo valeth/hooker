@@ -33,7 +33,7 @@ pub async fn get_hooks(ctx: Context<State>) -> Result<Response> {
     Ok(res)
 }
 
-pub async fn put_hook(mut ctx: Context<State>) -> Result<Response> {
+pub async fn post_hook(mut ctx: Context<State>) -> Result<Response> {
     require_auth!(ctx);
 
     let reader = hyper::body::aggregate(ctx.request).await?.reader();
