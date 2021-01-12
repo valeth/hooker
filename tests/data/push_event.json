@@ -1,0 +1,54 @@
+{
+    "ref": "refs/heads/master",
+    "user_username": "Testmaster",
+    "user_avatar": "http://example.com/testmaster.png",
+    "project": {
+        "name": "Project",
+        "web_url": "https://gitlab.com/testmaster/project",
+        "path_with_namespace": "testmaster/project",
+        "avatar_url": "https://gitlab.com/testmaster/project/avatar.png"
+    },
+    "commits": [
+        {
+            "id": "679ac842ad4e77a9",
+            "url": "https://gitlab.com/testmaster/project/commit/679ac842ad4e77a9",
+            "message": "More fixes",
+            "author": {
+                "name": "Testmaster"
+            }
+        },
+        {
+            "id": "4528084858866822",
+            "url": "https://gitlab.com/testmaster/project/commit/4528084858866822",
+            "message": "Fixed stuff\nAlso added more stuff",
+            "author": {
+                "name": "Testmaster"
+            }
+        },
+        {
+            "id": "89e617d5b82ee14c",
+            "url": "https://gitlab.com/testmaster/project/commit/89e617d5b82ee14c",
+            "message": "Why is everything broken?",
+            "author": {
+                "name": "Testmaster"
+            }
+        },
+        {
+            "id": "df9eb9704fa4cf59",
+            "url": "https://gitlab.com/testmaster/project/commit/df9eb9704fa4cf59",
+            "message": "Added some stuff",
+            "author": {
+                "name": "Testmaster"
+            }
+        },
+        {
+            "id": "244a1db7f5de8052",
+            "url": "https://gitlab.com/testmaster/project/commit/244a1db7f5de8052",
+            "message": "Witty commit message\nWith more lines\nthan before\n",
+            "author": {
+                "name": "Testmaster"
+            }
+        }
+    ],
+    "total_commits_count": 5
+}

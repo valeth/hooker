@@ -1,0 +1,21 @@
+{
+    "user": {
+        "username": "Testmaster",
+        "avatar_url": "http://example.com/testmaster.png"
+    },
+    "project": {
+        "name": "Project",
+        "web_url": "https://gitlab.com/testmaster/project",
+        "path_with_namespace": "testmaster/project",
+        "avatar_url": "https://gitlab.com/testmaster/project/avatar.png"
+    },
+    "object_attributes": {
+        "action": "open",
+        "created_at": "2018-06-19 12:28:46 UTC",
+        "state": "opened",
+        "description": "Anti cheat system is not detecting cheaters\nPls fix!",
+        "iid": 3,
+        "title": "Anti cheat not working",
+        "url": "https://gitlab.com/testmaster/project/issues/3"
+    }
+}

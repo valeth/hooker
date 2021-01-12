@@ -86,3 +86,45 @@ pub struct PipelineEvent {
     #[serde(rename = "object_attributes")]
     pub attributes: PipelineAttributes,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json as json;
+
+    #[test]
+    fn deserialize_push_event() {
+        let event = include_str!("../../tests/data/push_event.json");
+        json::from_str::<PushEvent>(&event).unwrap();
+    }
+
+    #[test]
+    fn deserialize_issue_opened_event() {
+        let event = include_str!("../../tests/data/issue_opened_event.json");
+        json::from_str::<IssueEvent>(&event).unwrap();
+    }
+
+    #[test]
+    fn deserialize_issue_closed_event() {
+        let event = include_str!("../../tests/data/issue_closed_event.json");
+        json::from_str::<IssueEvent>(&event).unwrap();
+    }
+
+    #[test]
+    fn deserialize_mr_opened_event() {
+        let event = include_str!("../../tests/data/mr_opened_event.json");
+        json::from_str::<MergeRequestEvent>(&event).unwrap();
+    }
+
+    #[test]
+    fn deserialize_mr_merged_event() {
+        let event = include_str!("../../tests/data/mr_merged_event.json");
+        json::from_str::<MergeRequestEvent>(&event).unwrap();
+    }
+
+    #[test]
+    fn deserialize_mr_closed_event() {
+        let event = include_str!("../../tests/data/mr_closed_event.json");
+        json::from_str::<MergeRequestEvent>(&event).unwrap();
+    }
+}
