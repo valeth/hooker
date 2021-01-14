@@ -2,6 +2,13 @@ use serde::{Serialize, Serializer};
 use chrono::DateTime;
 use super::gitlab;
 
+macro_rules! build_project_title {
+    [ $project:expr, $fmt:literal, $($args:expr),*] => {{
+        let text = format!(concat!("{} - ", $fmt), $project.name, $($args),*);
+        Title::new(text)
+    }}
+}
+
 #[derive(Debug)]
 pub struct Color(u8, u8, u8);
 
@@ -27,7 +34,7 @@ impl Serialize for Color {
 #[derive(Debug, Serialize)]
 pub struct Embed {
     pub author: Author,
-    pub title: String,
+    pub title: Title,
     pub url: String,
     pub color: Color,
     pub footer: Footer,
@@ -39,8 +46,6 @@ pub struct Embed {
 
 impl Embed {
     pub const DESCRIPTION_MAX_LENGTH: usize = 2048;
-    pub const AUTHOR_MAX_LENGTH: usize = 256;
-    pub const TITLE_MAX_LENGTH: usize = 256;
 }
 
 #[derive(Debug, Serialize)]
@@ -49,33 +54,53 @@ pub struct Author {
     pub icon_url: String,
 }
 
+impl Author {
+    pub const MAX_LENGTH: usize = 256;
+
+    pub fn new(mut name: String, icon_url: String) -> Self {
+        name.truncate(Self::MAX_LENGTH);
+        Self { name, icon_url }
+    }
+}
+
 #[derive(Debug, Serialize)]
 pub struct Footer {
     pub text: String,
     pub icon_url: String,
 }
 
+impl Footer {
+    pub const MAX_LENGTH: usize = 2048;
+
+    pub fn new(mut text: String, icon_url: String) -> Self {
+        text.truncate(Self::MAX_LENGTH);
+        Self { text: text.into(), icon_url }
+    }
+}
+
+#[derive(Debug, Serialize)]
+#[serde(transparent)]
+pub struct Title(String);
+
+impl Title {
+    pub const MAX_LENGTH: usize = 256;
+
+    pub fn new(mut text: String) -> Self {
+        text.truncate(Self::MAX_LENGTH);
+        Self(text)
+    }
+}
+
 impl From<gitlab::PushEvent> for Embed {
     fn from(ev: gitlab::PushEvent) -> Self {
-        let title = format!(
-            "{} - {count:} new commits in {branch:}",
-            ev.project.name,
-            count = ev.total_commits_count,
-            branch = ev.git_ref.split('/').last().unwrap()
-        );
-
         Self {
-            author: Author {
-                name: ev.username,
-                icon_url: ev.user_avatar,
-            },
-            title,
+            author: Author::new(ev.username, ev.user_avatar),
+            title: build_project_title!(
+                &ev.project, "{} new commits in {}", ev.total_commits_count, ev.git_ref.split('/').last().unwrap()
+            ),
             url: ev.project.web_url,
             color: Color::INFO,
-            footer: Footer {
-                text: ev.project.path_with_namespace,
-                icon_url: ev.project.avatar_url,
-            },
+            footer: Footer::new(ev.project.path_with_namespace, ev.project.avatar_url),
             timestamp: None,
             description: Some(join_commit_lines(&ev.commits)),
         }
@@ -88,18 +113,12 @@ impl From<gitlab::IssueEvent> for Embed {
         let timestamp = issue.created_at.parse().unwrap();
 
         Self {
-            author: Author {
-                name: ev.user.username,
-                icon_url: ev.user.avatar_url,
-            },
-            title: format!(
-                "{} - Issue {}: #{} {}", ev.project.name, issue.state, issue.issue_id, issue.title
+            author: Author::new(ev.user.username, ev.user.avatar_url),
+            title: build_project_title!(
+                &ev.project, "Issue {}: #{} {}", issue.state, issue.issue_id, issue.title
             ),
             url: issue.url,
-            footer: Footer {
-                text: ev.project.path_with_namespace,
-                icon_url: ev.project.avatar_url,
-            },
+            footer: Footer::new(ev.project.path_with_namespace, ev.project.avatar_url),
             timestamp: Some(timestamp),
             color: if issue.state == "closed" { Color::GOOD } else { Color::INFO },
             description: None,
@@ -113,18 +132,12 @@ impl From<gitlab::MergeRequestEvent> for Embed {
         let timestamp = mr.created_at.parse().unwrap();
 
         Self {
-            author: Author {
-                name: ev.user.username,
-                icon_url: ev.user.avatar_url,
-            },
-            title: format!(
-                "{} - Merge request {}: !{} {}", ev.project.name, mr.state, mr.issue_id, mr.title
+            author: Author::new(ev.user.username, ev.user.avatar_url),
+            title: build_project_title!(
+                &ev.project, "Merge request {}: !{} {}", mr.state, mr.issue_id, mr.title
             ),
             url: mr.url,
-            footer: Footer {
-                text: ev.project.path_with_namespace,
-                icon_url: ev.project.avatar_url,
-            },
+            footer: Footer::new( ev.project.path_with_namespace, ev.project.avatar_url),
             timestamp: Some(timestamp),
             color: match &*mr.state {
                 "closed" => Color::ALERT,
@@ -142,19 +155,12 @@ impl From<gitlab::PipelineEvent> for Embed {
         let timestamp = pipeline.created_at.parse().unwrap();
 
         Self {
-            author: Author {
-                name: ev.user.username,
-                icon_url: ev.user.avatar_url,
-            },
-            title: format!(
-                "{} - Pipeline for {} {} ({})",
-                ev.project.name, pipeline.git_ref, pipeline.detailed_status, pipeline.id
+            author: Author::new(ev.user.username, ev.user.avatar_url),
+            title: build_project_title!(
+                &ev.project, "Pipeline for {} {} ({})", pipeline.git_ref, pipeline.detailed_status, pipeline.id
             ),
             url: ev.commit.url,
-            footer: Footer {
-                text: ev.project.path_with_namespace,
-                icon_url: ev.project.avatar_url,
-            },
+            footer: Footer::new(ev.project.path_with_namespace, ev.project.avatar_url),
             timestamp: Some(timestamp),
             color: match &*pipeline.status {
                 "success" => Color::GOOD,
