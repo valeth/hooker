@@ -10,6 +10,7 @@ use crate::{
 
 const GITLAB_EVENT_HEADER: &str = "X-Gitlab-Event";
 const GITLAB_TOKEN_HEADER: &str = "X-Gitlab-Token";
+const DISCORD_RATELIMIT_RESET_HEADER: &str = "X-RateLimit-Reset";
 
 pub async fn post_gitlab(ctx: Context<State>) -> Result<Response> {
     if let Err(e) = valid_token(&ctx).await {
@@ -74,22 +75,35 @@ async fn handle_event(ctx: Context<State>, event: String) {
             let payload = serde_json::json!({ "embeds": [&embed] });
             let json = serde_json::to_string(&payload).unwrap();
 
-            match ctx.client.post(uri, json).await {
-                Err(err) => log::error!("{}", err),
-                Ok(res) if res.status().is_client_error() => {
-                    log::error!("Headers:\n{:#?}", res.headers());
-                    let buf = hyper::body::aggregate(res).await.unwrap();
-                    let reader = buf.reader();
-                    let json: serde_json::Value = serde_json::from_reader(reader).unwrap();
-                    log::error!("Response Payload:\n{:?}", json);
-                },
-                Ok(_) => ()
+            'retry: loop {
+                match ctx.client.post(uri, json.clone()).await {
+                    Err(err) => log::error!("{}", err),
+                    Ok(res) if res.status() == StatusCode::TOO_MANY_REQUESTS => {
+                        let reset_secs = res.headers()
+                            .get(DISCORD_RATELIMIT_RESET_HEADER).unwrap()
+                            .to_str().unwrap()
+                            .parse().unwrap();
+                        let reset_time = std::time::Duration::from_secs_f64(reset_secs);
+                        log::warn!("Reached Discord rate limit, reset in {} seconds", reset_time.as_secs());
+                        tokio::time::sleep(reset_time).await;
+                        continue 'retry;
+                    },
+                    Ok(res) if res.status().is_client_error() => {
+                        log::error!("Headers:\n{:#?}", res.headers());
+                        let buf = hyper::body::aggregate(res).await.unwrap();
+                        let reader = buf.reader();
+                        let json: serde_json::Value = serde_json::from_reader(reader).unwrap();
+                        log::error!("Response Payload:\n{:?}", json);
+                    },
+                    Ok(_) => ()
+                }
+
+                break
             }
         },
         Err(err) => log::error!("{}", err),
         _ => (),
     }
-
 }
 
 async fn handle_push_hook(payload: impl bytes::Buf) -> Result<Option<Embed>> {

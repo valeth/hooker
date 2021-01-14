@@ -1,4 +1,5 @@
 #![warn(rust_2018_idioms)]
+#![deny(unused_must_use)]
 
 mod http;
 mod routes;
