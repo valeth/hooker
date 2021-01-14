@@ -36,7 +36,11 @@ impl State {
 struct AppArgs {
     #[argh(option, from_str_fn(parse_user))]
     /// an colon separated pair of user and hashed password
-    user: Vec<(String, String)>
+    user: Vec<(String, String)>,
+
+    #[argh(switch)]
+    /// enables debug logging
+    debug: bool,
 }
 
 fn parse_user(value: &str) -> Result<(String, String), String> {
@@ -58,7 +62,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let args: AppArgs = argh::from_env();
 
-    initialize_logger()?;
+    initialize_logger(args.debug)?;
 
     let state = State::load()?;
     let mut users = state.users.write().await;
@@ -98,10 +102,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn initialize_logger() -> Result<(), Box<dyn std::error::Error>> {
+fn initialize_logger(debug: bool) -> Result<(), Box<dyn std::error::Error>> {
     use simplelog::{TermLogger, Config, TerminalMode};
 
-    TermLogger::init(log::LevelFilter::Debug, Config::default(), TerminalMode::Mixed)?;
+    let log_level = if debug {
+        log::LevelFilter::Debug
+    } else {
+        log::LevelFilter::Info
+    };
+
+    TermLogger::init(log_level, Config::default(), TerminalMode::Mixed)?;
 
     log::info!("Logger initialized");
     Ok(())
