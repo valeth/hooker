@@ -3,33 +3,17 @@
 
 mod http;
 mod routes;
-mod router;
 mod models;
 mod store;
 
-use std::{net::SocketAddr, sync::Arc, collections::HashMap};
+use std::{net::SocketAddr, collections::HashMap};
 use tokio::sync::RwLock;
-use router::Router;
-use store::HookRegistry;
-
+use routerify::{Router, RouterService};
 pub use anyhow::Result;
 
-#[derive(Default, Clone)]
-pub struct State {
-    pub hooks: HookRegistry,
-    pub users: Arc<RwLock<HashMap<String, String>>>,
-}
-
-impl State {
-    pub fn load() -> Result<Self> {
-        log::debug!("Restoring hook configurations");
-
-        Ok(Self {
-            hooks: HookRegistry::load()?,
-            ..Default::default()
-        })
-    }
-}
+pub type UserMap = HashMap<String, String>;
+pub type Users = RwLock<UserMap>;
+pub type HookRegistry = RwLock<store::HookRegistry>;
 
 #[derive(Debug, argh::FromArgs)]
 /// GitLab to Discord webhook server
@@ -57,52 +41,38 @@ fn parse_user(value: &str) -> Result<(String, String), String> {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    use hyper::service::{make_service_fn, service_fn};
+async fn main() -> Result<()> {
+    use hyper::Server;
 
     let args: AppArgs = argh::from_env();
 
     initialize_logger(args.debug)?;
 
-    let state = State::load()?;
-    let mut users = state.users.write().await;
-    users.extend(args.user);
-    drop(users);
-
+    let users = args.user.into_iter().collect::<UserMap>();
     let client = http::Client::new();
-    let mut routes = Router::new(client);
-    routes.get("/api/hooks", routes::api::get_hooks)
+    let hooks = store::HookRegistry::load()?;
+
+    let router = Router::builder()
+        .data(RwLock::new(users))
+        .data(RwLock::new(hooks))
+        .data(client)
+        .get("/api/hooks", routes::api::get_hooks)
         .post("/api/hook", routes::api::post_hook)
         .delete("/api/hook/:id", routes::api::delete_hook)
-        .post("/hooks/gitlab/:id", routes::hooks::post_gitlab);
-
-    let routes = Arc::new(routes);
-
-    let make_service = make_service_fn(move |_conn| {
-        let routes = routes.clone();
-        let state = state.clone();
-        async {
-            let service = service_fn(move |req| {
-                let routes = routes.clone();
-                let state = state.clone();
-                async move {
-                    let response = routes.handle_route(req, state).await;
-                    Ok::<_, hyper::Error>(response)
-                }
-            });
-            Ok::<_, hyper::Error>(service)
-        }
-    });
+        .post("/hooks/gitlab/:id", routes::hooks::post_gitlab)
+        .build()?;
 
     let addr: SocketAddr = ([0, 0, 0, 0], 9292).into();
-    let server = hyper::Server::try_bind(&addr)?.serve(make_service);
+    let service = RouterService::new(router)?;
+    let server = Server::try_bind(&addr)?.serve(service);
+
     log::info!("Starting server on http://{}", addr);
     server.await?;
 
     Ok(())
 }
 
-fn initialize_logger(debug: bool) -> Result<(), Box<dyn std::error::Error>> {
+fn initialize_logger(debug: bool) -> Result<()> {
     use simplelog::{TermLogger, Config, TerminalMode};
 
     let log_level = if debug {

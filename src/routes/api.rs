@@ -1,16 +1,17 @@
 use bytes::Buf;
+use routerify::ext::RequestExt;
 use crate::{
     models::CreateHookConfig,
-    router::Context,
-    http::{StatusCode, Response},
+    http::{StatusCode, Request, Response},
     store::HookConfig,
     Result,
-    State,
+    Users,
+    HookRegistry,
 };
 
 macro_rules! require_auth {
-    [$ctx:expr] => {
-        if !is_authorized(&$ctx).await {
+    [$req:expr] => {
+        if !is_authorized(&$req).await {
             log::error!("Failed to authorize user");
             return Ok(Response::builder()
                 .status(StatusCode::UNAUTHORIZED)
@@ -20,11 +21,12 @@ macro_rules! require_auth {
     }
 }
 
-pub async fn get_hooks(ctx: Context<State>) -> Result<Response> {
-    require_auth!(ctx);
+pub async fn get_hooks(req: Request) -> Result<Response> {
+    require_auth!(req);
 
-    let hooks = ctx.shared.hooks.all().await;
-    let json = serde_json::to_string(&hooks)?;
+    let hooks = req.data::<HookRegistry>().unwrap();
+    let hooks = hooks.read().await;
+    let json = serde_json::to_string(&hooks.all().await)?;
 
     let res = Response::builder()
         .header("Content-Type", "application/json")
@@ -33,15 +35,17 @@ pub async fn get_hooks(ctx: Context<State>) -> Result<Response> {
     Ok(res)
 }
 
-pub async fn post_hook(mut ctx: Context<State>) -> Result<Response> {
-    require_auth!(ctx);
+pub async fn post_hook(mut req: Request) -> Result<Response> {
+    require_auth!(req);
 
-    let reader = hyper::body::aggregate(ctx.request).await?.reader();
+    let reader = hyper::body::aggregate(&mut req).await?.reader();
     let config: CreateHookConfig =  serde_json::from_reader(reader)?;
     let config: HookConfig = config.into();
 
     let json = serde_json::to_string(&config)?;
-    ctx.shared.hooks.insert(config).await?;
+    let hooks = req.data::<HookRegistry>().unwrap();
+    let mut hooks = hooks.write().await;
+    hooks.insert(config).await?;
 
     let res = Response::builder()
         .header("Content-Type", "application/json")
@@ -50,17 +54,19 @@ pub async fn post_hook(mut ctx: Context<State>) -> Result<Response> {
     Ok(res)
 }
 
-pub async fn delete_hook(mut ctx: Context<State>) -> Result<Response> {
-    require_auth!(ctx);
+pub async fn delete_hook(req: Request) -> Result<Response> {
+    require_auth!(req);
 
-    let id = ctx.params.by_name("id").expect("id parameter");
-    ctx.shared.hooks.delete(id).await?;
+    let id = req.param("id").expect("id parameter");
+    let hooks = req.data::<HookRegistry>().unwrap();
+    let mut hooks = hooks.write().await;
+    hooks.delete(&**id).await?;
 
     Ok(Response::default())
 }
 
-async fn is_authorized(ctx: &Context<State>) -> bool {
-    if let Some(auth_header) = ctx.request.headers().get("Authorization") {
+async fn is_authorized(req: &Request) -> bool {
+    if let Some(auth_header) = req.headers().get("Authorization") {
         let auth_header = auth_header.to_str().unwrap();
         let parts = auth_header.split(' ').collect::<Vec<_>>();
 
@@ -74,7 +80,8 @@ async fn is_authorized(ctx: &Context<State>) -> bool {
             };
 
             if let [username, password] = &decoded[..] {
-                let users = ctx.shared.users.read().await;
+                let users = req.data::<Users>().unwrap();
+                let users = users.read().await;
 
                 if let Some(hashed_pw) = users.get(username) {
                     return hashed_pw == &hexdigest(password);

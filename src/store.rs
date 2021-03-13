@@ -4,12 +4,10 @@ use std::{
     fs::{self, File, OpenOptions},
     path::{Path, PathBuf},
     convert::TryFrom,
-    sync::Arc,
     fmt::{self, Display},
 };
 use anyhow::anyhow;
 use serde::{Serialize, Deserialize};
-use tokio::sync::RwLock;
 use chrono::DateTime;
 use crate::Result;
 
@@ -53,20 +51,17 @@ pub struct HookConfig {
 
 #[derive(Clone, Default)]
 pub struct HookRegistry {
-    inner: Arc<RwLock<HashMap<HookId, HookConfig>>>,
+    inner: HashMap<HookId, HookConfig>,
 }
 
 impl HookRegistry {
     pub fn load() -> Result<Self> {
-        let config = load_all_hook_configs()?;
-        Ok(Self {
-            inner: Arc::new(RwLock::new(config))
-        })
+        let inner = load_all_hook_configs()?;
+        Ok(Self { inner })
     }
 
     pub async fn all(&self) -> Vec<HookConfig> {
-        let configs = self.inner.read().await;
-        configs.values().cloned().collect()
+        self.inner.values().cloned().collect()
     }
 
     pub async fn get<I>(&self, id: I) -> Result<HookConfig>
@@ -75,18 +70,16 @@ impl HookRegistry {
         let id = HookId::try_from(id)
             .or_else(|_| Err(anyhow!("Failed to parse id")))?;
 
-        let configs = self.inner.read().await;
-        let config = configs.get(&id)
+        let config = self.inner.get(&id)
             .ok_or_else(|| anyhow!("No hook config found for id"))?;
 
         Ok(config.clone())
     }
 
     pub async fn insert(&mut self, config: HookConfig) -> Result<()> {
-        let mut configs = self.inner.write().await;
         let id = config.id.clone();
         store_hook_config(&config)?;
-        configs.insert(id, config);
+        self.inner.insert(id, config);
 
         Ok(())
     }
@@ -95,9 +88,8 @@ impl HookRegistry {
     where HookId: TryFrom<I>
     {
         let id = HookId::try_from(id).or_else(|_| Err(anyhow!("Failed to parse id")))?;
-        let mut configs = self.inner.write().await;
         delete_hook_config(&id)?;
-        configs.remove(&id);
+        self.inner.remove(&id);
 
         Ok(())
     }

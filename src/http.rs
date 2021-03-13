@@ -7,8 +7,6 @@ use crate::Result;
 
 pub type Request<T = hyper::Body> = hyper::Request<T>;
 pub type Response<T = hyper::Body> = hyper::Response<T>;
-pub type HttpMethod = hyper::http::Method;
-pub type Params = matchit::Params;
 
 pub struct Client(hyper::Client<HttpsConnector<HttpConnector>>);
 

@@ -1,19 +1,19 @@
 use anyhow::{anyhow, bail};
 use bytes::Buf;
+use routerify::ext::RequestExt;
 use crate::{
-    router::Context,
-    http::{StatusCode, Response},
+    http::{StatusCode, Request, Response, Client as HttpClient},
     models::discord::Embed,
-    State,
     Result,
+    HookRegistry,
 };
 
 const GITLAB_EVENT_HEADER: &str = "X-Gitlab-Event";
 const GITLAB_TOKEN_HEADER: &str = "X-Gitlab-Token";
 const DISCORD_RATELIMIT_RESET_HEADER: &str = "X-RateLimit-Reset";
 
-pub async fn post_gitlab(ctx: Context<State>) -> Result<Response> {
-    if let Err(e) = valid_token(&ctx).await {
+pub async fn post_gitlab(req: Request) -> Result<Response> {
+    if let Err(e) = valid_token(&req).await {
         log::error!("GitLab token validation failed: {}", e);
         let res = Response::builder()
             .status(StatusCode::FORBIDDEN)
@@ -21,9 +21,9 @@ pub async fn post_gitlab(ctx: Context<State>) -> Result<Response> {
         return Ok(res);
     }
 
-    if let Some(event) = ctx.request.headers().get(GITLAB_EVENT_HEADER) {
+    if let Some(event) = req.headers().get(GITLAB_EVENT_HEADER) {
         let event = event.to_str().unwrap().to_string();
-        tokio::spawn(handle_event(ctx, event));
+        tokio::spawn(handle_event(req, event));
         return Ok(Response::default());
     }
 
@@ -33,11 +33,13 @@ pub async fn post_gitlab(ctx: Context<State>) -> Result<Response> {
     Ok(res)
 }
 
-async fn valid_token(ctx: &Context<State>) -> Result<()> {
-    let id = ctx.params.by_name("id").expect("id parameter");
-    let hook_config = ctx.shared.hooks.get(id).await?;
+async fn valid_token(req: &Request) -> Result<()> {
+    let id = req.param("id").expect("id parameter");
+    let hooks = req.data::<HookRegistry>().unwrap();
+    let hooks = hooks.read().await;
+    let hook_config = hooks.get(id.as_ref()).await?;
 
-    let remote_token = ctx.request.headers()
+    let remote_token = req.headers()
         .get(GITLAB_TOKEN_HEADER)
         .ok_or_else(|| anyhow!("Token header missing"))?
         .to_str()
@@ -50,8 +52,8 @@ async fn valid_token(ctx: &Context<State>) -> Result<()> {
     }
 }
 
-async fn handle_event(ctx: Context<State>, event: String) {
-    let payload = hyper::body::aggregate(ctx.request).await.unwrap();
+async fn handle_event(mut req: Request, event: String) {
+    let payload = hyper::body::aggregate(&mut req).await.unwrap();
 
     let result = match &*event {
         "Push Hook" => handle_push_hook(payload).await,
@@ -66,8 +68,10 @@ async fn handle_event(ctx: Context<State>, event: String) {
 
     match result {
         Ok(Some(embed)) => {
-            let id = ctx.params.by_name("id").unwrap();
-            let hook_config = ctx.shared.hooks.get(id).await.unwrap();
+            let id = req.param("id").unwrap();
+            let hooks = req.data::<HookRegistry>().unwrap();
+            let hooks = hooks.read().await;
+            let hook_config = hooks.get(id.as_ref()).await.unwrap();
             let uri = &hook_config.discord_url;
 
             log::debug!("{:#?}", embed);
@@ -76,7 +80,8 @@ async fn handle_event(ctx: Context<State>, event: String) {
             let json = serde_json::to_string(&payload).unwrap();
 
             'retry: loop {
-                match ctx.client.post(uri, json.clone()).await {
+                let client = req.data::<HttpClient>().unwrap();
+                match client.post(uri, json.clone()).await {
                     Err(err) => log::error!("{}", err),
                     Ok(res) if res.status() == StatusCode::TOO_MANY_REQUESTS => {
                         let reset_secs = res.headers()
